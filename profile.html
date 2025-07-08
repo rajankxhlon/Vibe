@@ -161,7 +161,21 @@
       font-weight: bold;
       color: #333;
       margin-bottom: 5px;
+      display: flex; /* Make it a flex container to align text and tick */
+      justify-content: center; /* Center the content horizontally */
+      align-items: center; /* Vertically align items */
     }
+
+    /* Verified tick style (SVG) */
+    .verified-tick-svg {
+        width: 20px; /* Adjust size as needed */
+        height: 20px; /* Adjust size as needed */
+        margin-left: 5px; /* Space between username and tick */
+        display: inline-block; /* Ensure it behaves nicely with text */
+        vertical-align: middle; /* Align with text baseline */
+        flex-shrink: 0; /* Prevent it from shrinking */
+    }
+
 
     .profession, .bio {
         font-size: 15px;
@@ -286,7 +300,17 @@
       font-weight: bold;
       color: #333;
       font-size: 15px;
+      display: flex; /* Use flexbox for username and tick */
+      align-items: center; /* Vertically align them */
     }
+
+    /* Verified tick for individual koos (SVG) */
+    .username-koo .verified-tick-svg {
+        width: 16px; /* Slightly smaller for koo cards */
+        height: 16px;
+        margin-left: 4px;
+    }
+
 
     .koo-timestamp {
         font-size: 12px;
@@ -615,7 +639,17 @@
     </div>
     <input type="file" id="profilePicInput" accept="image/*">
     
-    <h1 class="username" id="profileUsername">Loading...</h1>
+    <h1 class="username" id="profileUsername">
+        <span>Loading...</span>
+        <div class="verified-tick-svg" id="profileVerifiedTick" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+                <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                    <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                    <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+                </g>
+            </svg>
+        </div>
+    </h1>
     <p class="profession" id="profileProfession" style="display: none;"></p>
     <p class="bio" id="profileBio" style="display: none;"></p>
 
@@ -701,8 +735,9 @@
     const profileInitial = document.getElementById('profileInitial');
     const profilePicLoader = document.getElementById('profilePicLoader');
     const profileUsername = document.getElementById('profileUsername');
-    const profileProfession = document.getElementById('profileProfession'); // New
-    const profileBio = document.getElementById('profileBio');             // New
+    const profileVerifiedTick = document.getElementById('profileVerifiedTick'); // Now refers to the div containing SVG
+    const profileProfession = document.getElementById('profileProfession');
+    const profileBio = document.getElementById('profileBio');
     const kooCountSpan = document.getElementById('kooCount');
     const followersCountSpan = document.getElementById('followersCount');
     const followingCountSpan = document.getElementById('followingCount');
@@ -711,7 +746,7 @@
     const noMyKoos = document.getElementById('noMyKoos');
     const headerOptionsMenu = document.getElementById('headerOptionsMenu');
     
-    // Edit Profile Modal Elements (New)
+    // Edit Profile Modal Elements
     const editProfileBtn = document.getElementById('editProfileBtn');
     const editProfileModal = document.getElementById('editProfileModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -722,7 +757,7 @@
 
     let currentLoggedInUserId = null;
 
-    // --- Utility Functions (Copied/Adapted from home.html for consistency) ---
+    // --- Utility Functions ---
 
     function formatTimestamp(timestamp) {
       if (!timestamp) return '';
@@ -758,7 +793,6 @@
     
     // --- Header Menu Logic ---
     function toggleHeaderOptions(button) {
-        // Close other open menus if any (e.g., koo options menu)
         document.querySelectorAll('.options-menu.active').forEach(openMenu => {
             if (openMenu.id !== 'headerOptionsMenu') {
                 openMenu.classList.remove('active');
@@ -767,7 +801,6 @@
 
         headerOptionsMenu.classList.toggle('active');
 
-        // Close menu when clicking outside
         document.addEventListener('click', function closeMenu(event) {
             if (!headerOptionsMenu.contains(event.target) && !button.contains(event.target)) {
                 headerOptionsMenu.classList.remove('active');
@@ -779,7 +812,7 @@
     function logout() {
       auth.signOut().then(() => {
         alert("Logged out successfully!");
-        window.location.href = "index.html"; // Redirect to login page
+        window.location.href = "index.html";
       }).catch((error) => {
         console.error("Error logging out:", error);
         alert("Failed to log out. Please try again.");
@@ -787,13 +820,12 @@
     }
 
     function navigateToPage(pageUrl) {
-        headerOptionsMenu.classList.remove('active'); // Close menu
+        headerOptionsMenu.classList.remove('active');
         window.location.href = pageUrl;
     }
 
     // --- Profile Picture Update Logic ---
 
-    // Trigger file input when container is clicked
     profilePicContainer.addEventListener('click', () => {
       profilePicInput.click();
     });
@@ -807,9 +839,9 @@
           return;
       }
 
-      profilePicLoader.style.display = 'block'; // Show loader
-      profilePic.style.display = 'none'; // Hide image
-      profileInitial.style.display = 'none'; // Hide initial
+      profilePicLoader.style.display = 'block';
+      profilePic.style.display = 'none';
+      profileInitial.style.display = 'none';
 
       try {
         const formData = new FormData();
@@ -826,13 +858,12 @@
           const imageUrl = data.data.url;
           console.log("Uploaded to imgBB:", imageUrl);
           
-          // Update user's profilePicUrl in Firestore
           await db.collection('users').doc(currentLoggedInUserId).update({
             profilePicUrl: imageUrl
           });
 
           alert("Profile picture updated successfully!");
-          loadUserProfile(currentLoggedInUserId); // Reload profile to show new picture
+          loadUserProfile(currentLoggedInUserId);
         } else {
           console.error("ImgBB upload error:", data);
           alert("Failed to upload image to imgBB: " + (data.error && data.error.message ? data.error.message : "Unknown error."));
@@ -841,7 +872,7 @@
         console.error("Error uploading profile picture:", error);
         alert("An error occurred while uploading your profile picture.");
       } finally {
-        profilePicLoader.style.display = 'none'; // Hide loader
+        profilePicLoader.style.display = 'none';
       }
     });
 
@@ -849,7 +880,6 @@
 
     function openEditProfileModal() {
         editProfileModal.style.display = 'block';
-        // Populate modal fields with current profile data
         editProfessionInput.value = profileProfession.textContent === 'No profession set' ? '' : profileProfession.textContent;
         editBioTextarea.value = profileBio.textContent === 'No bio set' ? '' : profileBio.textContent;
     }
@@ -862,7 +892,6 @@
     closeModalBtn.addEventListener('click', closeEditProfileModal);
     cancelEditBtn.addEventListener('click', closeEditProfileModal);
 
-    // Close modal if user clicks outside of it
     window.addEventListener('click', (event) => {
         if (event.target == editProfileModal) {
             closeEditProfileModal();
@@ -885,7 +914,7 @@
             });
             alert("Profile updated successfully!");
             closeEditProfileModal();
-            loadUserProfile(currentLoggedInUserId); // Reload profile to reflect changes
+            loadUserProfile(currentLoggedInUserId);
         } catch (error) {
             console.error("Error saving profile:", error);
             alert("Failed to save profile changes. Please try again.");
@@ -896,7 +925,8 @@
     // --- Load User Profile Data ---
     async function loadUserProfile(userId) {
       if (!userId) {
-        profileUsername.textContent = "Not logged in";
+        profileUsername.querySelector('span').textContent = "Not logged in";
+        profileVerifiedTick.style.display = 'none'; // Hide tick
         profileProfession.style.display = 'none';
         profileBio.style.display = 'none';
         kooCountSpan.textContent = "0";
@@ -908,33 +938,38 @@
       try {
         const userProfile = await getUserProfile(userId);
         if (userProfile) {
-          profileUsername.textContent = `@${userProfile.displayName || userProfile.email.split('@')[0]}`;
+          profileUsername.querySelector('span').textContent = `@${userProfile.displayName || userProfile.email.split('@')[0]}`;
+          
+          // Show/hide verified tick based on userProfile.isVerified
+          if (userProfile.isVerified) {
+              profileVerifiedTick.style.display = 'inline-block';
+          } else {
+              profileVerifiedTick.style.display = 'none';
+          }
+
           followersCountSpan.textContent = userProfile.followers ? userProfile.followers.length : 0;
           followingCountSpan.textContent = userProfile.following ? userProfile.following.length : 0;
 
-          // Display profession
           if (userProfile.profession) {
               profileProfession.textContent = userProfile.profession;
               profileProfession.style.display = 'block';
           } else {
-              profileProfession.textContent = 'No profession set'; // Placeholder text
+              profileProfession.textContent = 'No profession set';
               profileProfession.style.display = 'block';
               profileProfession.style.fontStyle = 'italic';
               profileProfession.style.color = '#999';
           }
 
-          // Display bio
           if (userProfile.bio) {
               profileBio.textContent = userProfile.bio;
               profileBio.style.display = 'block';
           } else {
-              profileBio.textContent = 'No bio set'; // Placeholder text
+              profileBio.textContent = 'No bio set';
               profileBio.style.display = 'block';
               profileBio.style.fontStyle = 'italic';
               profileBio.style.color = '#999';
           }
 
-          // Display profile picture or initial
           if (userProfile.profilePicUrl) {
             profilePic.src = userProfile.profilePicUrl;
             profilePic.style.display = 'block';
@@ -942,17 +977,17 @@
           } else {
             profilePic.style.display = 'none';
             profileInitial.textContent = (userProfile.displayName || userProfile.email.charAt(0)).charAt(0).toUpperCase();
-            profileInitial.style.display = 'flex'; // Ensure initial is centered
+            profileInitial.style.display = 'flex';
           }
 
-          // Fetch Koo count
           const myKoosSnapshot = await db.collection('koos').where('userId', '==', userId).get();
           kooCountSpan.textContent = myKoosSnapshot.size;
 
           renderMyKoos(myKoosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
         } else {
-          profileUsername.textContent = "Profile Not Found";
+          profileUsername.querySelector('span').textContent = "Profile Not Found";
+          profileVerifiedTick.style.display = 'none';
           profileProfession.style.display = 'none';
           profileBio.style.display = 'none';
           kooCountSpan.textContent = "0";
@@ -964,13 +999,14 @@
         }
       } catch (error) {
         console.error("Error loading user profile:", error);
-        profileUsername.textContent = "Error loading profile";
+        profileUsername.querySelector('span').textContent = "Error loading profile";
+        profileVerifiedTick.style.display = 'none';
       }
     }
 
     // --- Render My Koos ---
     async function renderMyKoos(myKoos) {
-      myKoosFeed.innerHTML = ''; // Clear previous posts
+      myKoosFeed.innerHTML = '';
       loadingMyKoos.style.display = 'none';
       noMyKoos.style.display = 'none';
 
@@ -979,14 +1015,25 @@
         return;
       }
 
-      // Sort Koos by timestamp (latest first)
       myKoos.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
 
+      const svgTickHtml = `
+          <div class="verified-tick-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+                  <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                      <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                      <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+                  </g>
+              </svg>
+          </div>
+      `;
+
       for (const koo of myKoos) {
-        const userProfile = await getUserProfile(koo.userId); // This should be current user's profile
+        const userProfile = await getUserProfile(koo.userId);
         const profilePicUrl = userProfile && userProfile.profilePicUrl ? userProfile.profilePicUrl : null;
         const displayUsername = userProfile && userProfile.displayName ? userProfile.displayName : (koo.username || 'Anonymous');
         const firstLetter = displayUsername.charAt(0).toUpperCase();
+        const isUserVerified = userProfile && userProfile.isVerified;
 
         const hasLiked = koo.likes && koo.likes.includes(currentLoggedInUserId);
         const rekooCount = koo.rekoos ? koo.rekoos.length : 0;
@@ -999,7 +1046,10 @@
         kooCard.innerHTML = `
           <div class="koo-header">
             ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${firstLetter}</div>`}
-            <span class="username-koo">${displayUsername}</span>
+            <span class="username-koo">
+                ${displayUsername}
+                ${isUserVerified ? svgTickHtml : ''}
+            </span>
             <span class="koo-timestamp">${formatTimestamp(koo.timestamp)}</span>
             <div class="post-options-container">
                 <button class="options-btn" onclick="togglePostOptions(this, '${koo.id}')"><i class="fas fa-ellipsis-h"></i></button>
@@ -1027,11 +1077,10 @@
       }
     }
     
-    // --- Post Action Functions (from home.html, adapted for profile.html) ---
+    // --- Post Action Functions ---
 
     function togglePostOptions(button, kooId) {
         const menu = document.getElementById(`options-menu-${kooId}`);
-        // Close other open menus if any (e.g., header options menu)
         document.querySelectorAll('.options-menu.active').forEach(openMenu => {
             if (openMenu.id !== `options-menu-${kooId}`) {
                 openMenu.classList.remove('active');
@@ -1039,7 +1088,6 @@
         });
         menu.classList.toggle('active');
 
-        // Close menu when clicking outside
         document.addEventListener('click', function closeMenu(event) {
             if (!menu.contains(event.target) && !button.contains(event.target)) {
                 menu.classList.remove('active');
@@ -1051,7 +1099,6 @@
     function editPost(kooId) {
         alert(`Edit post with ID: ${kooId}`);
         document.getElementById(`options-menu-${kooId}`).classList.remove('active');
-        // Implement actual edit functionality (e.g., redirect to edit page, or show modal)
     }
 
     async function deletePost(kooId) {
@@ -1059,8 +1106,7 @@
             try {
                 await db.collection("koos").doc(kooId).delete();
                 alert("Koo deleted successfully!");
-                document.getElementById(`koo-${kooId}`).remove(); // Remove from UI
-                // Re-calculate and update Koo count
+                document.getElementById(`koo-${kooId}`).remove();
                 const myKoosSnapshot = await db.collection('koos').where('userId', '==', currentLoggedInUserId).get();
                 kooCountSpan.textContent = myKoosSnapshot.size;
                 if (myKoosSnapshot.size === 0) {
@@ -1184,4 +1230,4 @@
   </script>
 
 </body>
-</html>
+  </html>
