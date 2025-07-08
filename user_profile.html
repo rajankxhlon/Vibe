@@ -139,6 +139,19 @@
       font-weight: bold;
       color: #333;
       margin-bottom: 10px;
+      display: flex; /* Make it a flex container to align text and tick */
+      justify-content: center; /* Center the content horizontally */
+      align-items: center; /* Vertically align items */
+    }
+
+    /* Verified tick style (SVG) - Main Profile */
+    .profile-card .verified-tick-svg {
+        width: 20px; /* Adjust size as needed */
+        height: 20px; /* Adjust size as needed */
+        margin-left: 5px; /* Space between username and tick */
+        display: inline-block; /* Ensure it behaves nicely with text */
+        vertical-align: middle; /* Align with text baseline */
+        flex-shrink: 0; /* Prevent it from shrinking */
     }
 
     .profession, .bio {
@@ -147,6 +160,7 @@
         margin-bottom: 5px;
         white-space: pre-wrap; /* Preserve line breaks */
         word-wrap: break-word;
+        padding: 0 15px; /* Add some padding to prevent text from touching edges */
     }
     .bio {
         margin-top: 10px;
@@ -165,9 +179,10 @@
         cursor: pointer;
         transition: background-color 0.2s ease;
         margin-top: 10px;
-        display: block; /* Make it a block element */
-        margin-left: auto; /* Push it to the right */
-        margin-right: 0; /* Align to the right of its container */
+        display: inline-block; /* Make it inline-block */
+        /* Center button horizontally */
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .follow-unfollow-btn.following {
@@ -273,6 +288,15 @@
       font-weight: bold;
       color: #333;
       font-size: 15px;
+      display: flex; /* Use flexbox for username and tick */
+      align-items: center; /* Vertically align them */
+    }
+
+    /* Verified tick for individual koos (SVG) */
+    .username-koo .verified-tick-svg {
+        width: 16px; /* Slightly smaller for koo cards */
+        height: 16px;
+        margin-left: 4px;
     }
 
     .koo-timestamp {
@@ -469,7 +493,17 @@
       <div class="loader" id="profilePicLoader"></div>
     </div>
     
-    <h1 class="username" id="profileUsername">Loading...</h1>
+    <h1 class="username" id="profileUsername">
+        <span>Loading...</span>
+        <div class="verified-tick-svg" id="userProfileVerifiedTick" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+                <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                    <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                    <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+                </g>
+            </svg>
+        </div>
+    </h1>
     <p class="profession" id="profileProfession" style="display: none;"></p>
     <p class="bio" id="profileBio" style="display: none;"></p>
 
@@ -516,7 +550,7 @@
       apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
       authDomain: "petpal-15621.firebaseapp.com",
       projectId: "petpal-15621",
-      storageBucket: "petpal-15621.firebasestorage.app",
+      storageBucket: "petpal-15621.firebase.appspot.com",
       messagingSenderId: "251985816504",
       appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
       measurementId: "G-Z2ED9VCCZY"
@@ -530,8 +564,9 @@
     const profilePic = document.getElementById('profilePic');
     const profileInitial = document.getElementById('profileInitial');
     const profileUsername = document.getElementById('profileUsername');
-    const profileProfession = document.getElementById('profileProfession'); // New
-    const profileBio = document.getElementById('profileBio');             // New
+    const userProfileVerifiedTick = document.getElementById('userProfileVerifiedTick'); // New: Main profile tick
+    const profileProfession = document.getElementById('profileProfession');
+    const profileBio = document.getElementById('profileBio');
     const kooCountSpan = document.getElementById('kooCount');
     const followersCountSpan = document.getElementById('followersCount');
     const followingCountSpan = document.getElementById('followingCount');
@@ -612,7 +647,8 @@
     // --- Load User Profile Data ---
     async function loadUserProfile(userId) {
       if (!userId) {
-        profileUsername.textContent = "Profile Not Found";
+        profileUsername.querySelector('span').textContent = "Profile Not Found";
+        userProfileVerifiedTick.style.display = 'none'; // Hide tick
         profileProfession.style.display = 'none';
         profileBio.style.display = 'none';
         kooCountSpan.textContent = "0";
@@ -625,7 +661,15 @@
         const userProfile = await getUserProfile(userId);
         if (userProfile) {
           userProfileTitle.textContent = `${userProfile.displayName || userProfile.email.split('@')[0]}'s Profile`;
-          profileUsername.textContent = `@${userProfile.displayName || userProfile.email.split('@')[0]}`;
+          profileUsername.querySelector('span').textContent = `@${userProfile.displayName || userProfile.email.split('@')[0]}`;
+          
+          // Show/hide verified tick based on userProfile.isVerified
+          if (userProfile.isVerified) {
+              userProfileVerifiedTick.style.display = 'inline-block';
+          } else {
+              userProfileVerifiedTick.style.display = 'none';
+          }
+
           followersCountSpan.textContent = userProfile.followers ? userProfile.followers.length : 0;
           followingCountSpan.textContent = userProfile.following ? userProfile.following.length : 0;
 
@@ -664,7 +708,8 @@
 
         } else {
           userProfileTitle.textContent = "User Profile Not Found";
-          profileUsername.textContent = "User Not Found";
+          profileUsername.querySelector('span').textContent = "User Not Found";
+          userProfileVerifiedTick.style.display = 'none';
           profileProfession.style.display = 'none';
           profileBio.style.display = 'none';
           kooCountSpan.textContent = "0";
@@ -677,7 +722,7 @@
         }
       } catch (error) {
         console.error("Error loading user profile:", error);
-        profileUsername.textContent = "Error loading profile";
+        profileUsername.querySelector('span').textContent = "Error loading profile";
         userProfileTitle.textContent = "Error";
       } finally {
           checkFollowStatus(); // Always check follow status after loading the profile
@@ -787,11 +832,24 @@
       // Sort Koos by timestamp (latest first)
       usersKoos.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
 
+      // Define the SVG tick HTML once
+      const svgTickHtml = `
+          <div class="verified-tick-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+                  <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                      <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                      <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+                  </g>
+              </svg>
+          </div>
+      `;
+
       for (const koo of usersKoos) {
         const userProfile = await getUserProfile(koo.userId); // This is the target user's profile
         const profilePicUrl = userProfile && userProfile.profilePicUrl ? userProfile.profilePicUrl : null;
         const displayUsername = userProfile && userProfile.displayName ? userProfile.displayName : (koo.username || 'Anonymous');
         const firstLetter = displayUsername.charAt(0).toUpperCase();
+        const isUserVerified = userProfile && userProfile.isVerified; // Get verification status
 
         const hasLiked = koo.likes && koo.likes.includes(currentLoggedInUserId);
         const rekooCount = koo.rekoos ? koo.rekoos.length : 0;
@@ -804,7 +862,9 @@
         kooCard.innerHTML = `
           <div class="koo-header">
             ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${firstLetter}</div>`}
-            <span class="username-koo">${displayUsername}</span>
+            <span class="username-koo">
+                ${displayUsername}
+                ${isUserVerified ? svgTickHtml : ''} </span>
             <span class="koo-timestamp">${formatTimestamp(koo.timestamp)}</span>
             </div>
           <p class="koo-text">${koo.text}</p>
