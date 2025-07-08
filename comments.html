@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Koo Comments</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* General Body and Layout */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            padding-bottom: 120px;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background-color: #ffcc00;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header .back-btn {
+            font-size: 24px;
+            color: #000;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        .header .page-title {
+            margin: 0;
+            color: #000;
+            font-size: 20px;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+
+        /* Koo Display (Now only shows user info) */
+        .koo-container {
+            background-color: #ffffff;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .koo-container:hover {
+            transform: translateY(-2px);
+        }
+
+        .koo-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+        }
+
+        .koo-header .profile-pic, .koo-header .profile-initial {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+            border: 2px solid #ffcc00;
+            flex-shrink: 0;
+        }
+
+        .koo-header .profile-initial {
+            background-color: #ffcc00;
+            color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 26px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .koo-user-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .koo-user-info .username-and-badge {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .koo-user-info .username {
+            font-weight: bold;
+            color: #222;
+            font-size: 17px;
+            line-height: 1.2;
+        }
+
+        .koo-user-info .handle {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+
+        .koo-timestamp {
+            color: #888;
+            font-size: 13px;
+            white-space: nowrap;
+            margin-left: auto;
+            align-self: center;
+        }
+
+        .koo-content, .koo-media {
+            display: none;
+        }
+
+        .koo-actions {
+            display: none;
+        }
+
+        /* Comment Section */
+        .comments-section {
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        .comments-section h3 {
+            color: #333;
+            margin-left: 10px;
+            margin-bottom: 15px;
+            font-size: 19px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .comment-item {
+            background-color: #ffffff;
+            margin: 10px 10px;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 12px;
+            transition: transform 0.1s ease-in-out;
+            position: relative;
+            flex-wrap: wrap; /* Allow content to wrap, especially actions */
+        }
+        .comment-item:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Circular Profile Pic for Comments */
+        .comment-item .profile-pic, .comment-item .profile-initial {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            font-size: 20px;
+            flex-shrink: 0;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            color: #555;
+        }
+
+        .comment-content-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 5px;
+        }
+
+        .comment-header .username {
+            font-weight: bold;
+            color: #222;
+            font-size: 15px;
+            margin-right: 8px;
+        }
+
+        .comment-header .handle {
+            color: #777;
+            font-size: 13px;
+            margin-right: 8px;
+        }
+
+        .comment-timestamp {
+            color: #888;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .comment-text {
+            font-size: 14.5px;
+            color: #444;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            margin-bottom: 10px; /* Space before actions */
+        }
+
+        .comment-edit-input {
+            width: calc(100% - 10px);
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14.5px;
+            font-family: 'Segoe UI', sans-serif;
+            resize: vertical;
+            min-height: 50px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .comment-edit-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-end;
+        }
+        .comment-edit-actions button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+        }
+        .comment-edit-actions .save-btn {
+            background-color: #ffcc00;
+            color: #000;
+        }
+        .comment-edit-actions .cancel-btn {
+            background-color: #e0e0e0;
+            color: #555;
+        }
+
+        .no-comments-message {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 15px;
+            background-color: #ffffff;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* Comment Input Area */
+        .comment-input-area {
+            position: fixed;
+            bottom: 60px;
+            width: 100%;
+            background: #ffffff;
+            border-top: 1px solid #eee;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+            z-index: 99;
+            gap: 15px;
+            box-sizing: border-box;
+        }
+
+        /* HIDDEN: Profile pic in comment input area */
+        .comment-input-area #myProfilePicContainer {
+            display: none;
+        }
+
+        .comment-input-area textarea {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            resize: none;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 16px;
+            min-height: 48px;
+            max-height: 120px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            color: #333;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .comment-input-area textarea:focus {
+            border-color: #ffcc00;
+            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.2);
+            outline: none;
+            background-color: #fff;
+        }
+
+        .comment-input-area button {
+            background-color: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .comment-input-area button:hover:not(:disabled) {
+            background-color: #ffdb4d;
+        }
+        .comment-input-area button:disabled {
+            background-color: #e0e0e0;
+            color: #aaa;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Verified Badge Styling */
+        .verified-badge {
+            width: 18px;
+            height: 18px;
+            margin-left: 5px;
+            flex-shrink: 0;
+            vertical-align: middle;
+        }
+
+        .username-and-badge {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Three Dots Menu Styling */
+        .comment-options {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 18px;
+            color: #777;
+        }
+        .comment-options-menu {
+            position: absolute;
+            top: 30px;
+            right: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 10;
+            list-style: none;
+            padding: 5px 0;
+            margin: 0;
+            min-width: 120px;
+            display: none;
+        }
+        .comment-options-menu li {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+        .comment-options-menu li:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Comment Actions (Like/Reply) */
+        .comment-actions {
+            display: flex;
+            gap: 20px;
+            margin-top: 5px;
+            width: 100%;
+            justify-content: flex-end;
+        }
+        .comment-action-item {
+            display: flex;
+            align-items: center;
+            color: #666;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 15px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .comment-action-item:hover {
+            background-color: #f5f5f5;
+            color: #444;
+        }
+        .comment-action-item i {
+            margin-right: 5px;
+            font-size: 15px;
+        }
+        .comment-action-item .comment-like-icon.liked {
+            color: #e0245e;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #ffffff;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 60px;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+            z-index: 100;
+        }
+
+        .footer i {
+            font-size: 24px;
+            color: #000;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .footer i:hover {
+            color: #ffcc00;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <i class="fas fa-arrow-left back-btn" onclick="window.history.back()" title="Go Back"></i>
+        <span class="page-title">Koo</span>
+    </div>
+
+    <div id="kooDetailsContainer">
+        <div class="no-comments-message" id="loadingKooMessage">Loading Koo...</div>
+    </div>
+
+    <div class="comments-section">
+        <h3>Comments</h3>
+        <div id="commentsList">
+            <div class="no-comments-message" id="loadingCommentsMessage">Loading comments...</div>
+            <div class="no-comments-message" id="noCommentsMessage" style="display: none;">No comments yet. Be the first to comment!</div>
+        </div>
+    </div>
+
+    <div class="comment-input-area">
+        <div id="myProfilePicContainer" style="display: none;">
+            <div class="profile-initial">?</div>
+        </div>
+        <textarea id="commentInput" placeholder="Add a comment..."></textarea>
+        <button id="postCommentBtn" disabled>Koo</button>
+    </div>
+
+    <div class="footer">
+        <i class="fas fa-home" title="Home" onclick="window.location.href='home.html'"></i>
+        <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
+        <i class="fas fa-search" title="Search" onclick="window.location.href='search.html'"></i>
+        <i class="fas fa-user-circle" title="Profile" onclick="window.location.href='profile.html'"></i>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Config (Must be the same as home.html and notifications.html)
+        const firebaseConfig = {
+          apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+          authDomain: "petpal-15621.firebaseapp.com",
+          projectId: "petpal-15621",
+          storageBucket: "petpal-15621.firebasestorage.app",
+          messagingSenderId: "251985816504",
+          appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
+          measurementId: "G-Z2ED9VCCZY"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const kooDetailsContainer = document.getElementById('kooDetailsContainer');
+        const commentsList = document.getElementById('commentsList');
+        const commentInput = document.getElementById('commentInput');
+        const postCommentBtn = document.getElementById('postCommentBtn');
+        const myProfilePicContainer = document.getElementById('myProfilePicContainer');
+        const loadingKooMessage = document.getElementById('loadingKooMessage');
+        const loadingCommentsMessage = document.getElementById('loadingCommentsMessage');
+        const noCommentsMessage = document.getElementById('noCommentsMessage');
+
+        let currentLoggedInUserId = null;
+        let currentLoggedInUserDisplayName = 'Unknown User';
+        let currentLoggedInUserProfile = null;
+        let currentKooId = null;
+
+        const verifiedBadgeSvg = `
+            <svg class="verified-badge" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+                <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                    <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                    <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+                </g>
+            </svg>
+        `;
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '';
+            const date = timestamp.toDate();
+            const now = new Date();
+            const diff = now.getTime() - date.getTime();
+
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (seconds < 60) return `${seconds}s ago`;
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        async function getUserProfile(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    return { id: userDoc.id, ...userDoc.data() };
+                }
+                return null;
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                return null;
+            }
+        }
+
+        // Dummy functions for Koo actions (main display)
+        function updateLikeStatus() {}
+        function updateRekooStatus() {}
+        async function toggleLike() {}
+        async function toggleRekoo() {}
+
+        // --- Render Specific Koo (Simplified to only show user info) ---
+        async function renderKoo(kooDoc) {
+            const kooData = kooDoc.data();
+            const authorProfile = await getUserProfile(kooData.userId);
+            const authorDisplayName = authorProfile && authorProfile.displayName ? authorProfile.displayName : 'Unknown User';
+            const authorHandle = authorProfile && authorProfile.handle ? `@${authorProfile.handle}` : '';
+            const authorProfilePicUrl = authorProfile && authorProfile.profilePicUrl ? authorProfile.profilePicUrl : null;
+            const authorFirstLetter = authorDisplayName.charAt(0).toUpperCase();
+
+            kooDetailsContainer.innerHTML = `
+                <div class="koo-container" id="koo-${kooDoc.id}">
+                    <div class="koo-header">
+                        ${authorProfilePicUrl ? `<img src="${authorProfilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${authorFirstLetter}</div>`}
+                        <div class="koo-user-info">
+                            <div class="username-and-badge">
+                                <span class="username">${authorDisplayName}</span>
+                                ${authorProfile && authorProfile.isVerified ? verifiedBadgeSvg : ''}
+                            </div>
+                            <span class="handle">${authorHandle}</span>
+                        </div>
+                        <span class="koo-timestamp">${formatTimestamp(kooData.timestamp)}</span>
+                    </div>
+                    <div class="koo-actions" style="display: none;"></div>
+                </div>
+            `;
+        }
+
+        async function fetchKooDetails(kooId) {
+            loadingKooMessage.style.display = 'block';
+            kooDetailsContainer.innerHTML = '';
+            kooDetailsContainer.appendChild(loadingKooMessage);
+
+            try {
+                const kooDoc = await db.collection('koos').doc(kooId).get();
+                if (kooDoc.exists) {
+                    await renderKoo(kooDoc);
+                    loadingKooMessage.style.display = 'none';
+                } else {
+                    kooDetailsContainer.innerHTML = '<div class="no-comments-message">Koo not found.</div>';
+                    loadingKooMessage.style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Error fetching Koo details:", error);
+                kooDetailsContainer.innerHTML = '<div class="no-comments-message">Failed to load Koo.</div>';
+                loadingKooMessage.style.display = 'none';
+            }
+        }
+
+        // --- Render Comments ---
+        async function renderComment(commentDoc) {
+            const comment = commentDoc.data();
+            const commentId = commentDoc.id;
+            const authorProfile = await getUserProfile(comment.userId);
+            const authorDisplayName = authorProfile && authorProfile.displayName ? authorProfile.displayName : 'Unknown User';
+            const authorHandle = authorProfile && authorProfile.handle ? `@${authorProfile.handle}` : '';
+            const authorProfilePicUrl = authorProfile && authorProfile.profilePicUrl ? authorProfile.profilePicUrl : null;
+            const authorFirstLetter = authorDisplayName.charAt(0).toUpperCase();
+
+            const isMyComment = comment.userId === currentLoggedInUserId;
+
+            // Check if current user liked this comment
+            const likedBy = comment.likedBy || [];
+            const isLiked = likedBy.includes(currentLoggedInUserId);
+            const likeCount = likedBy.length;
+
+            const commentItem = document.createElement('div');
+            commentItem.className = 'comment-item';
+            commentItem.id = `comment-${commentId}`;
+
+            commentItem.innerHTML = `
+                ${authorProfilePicUrl ? `<img src="${authorProfilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${authorFirstLetter}</div>`}
+                <div class="comment-content-wrapper">
+                    <div class="comment-header">
+                        <div class="username-and-badge">
+                            <span class="username">${authorDisplayName}</span>
+                            ${authorProfile && authorProfile.isVerified ? verifiedBadgeSvg : ''}
+                        </div>
+                        <span class="handle">${authorHandle}</span>
+                        <span class="comment-timestamp">${formatTimestamp(comment.timestamp)}</span>
+                    </div>
+                    <div class="comment-text">${comment.text}</div>
+                    <div class="comment-actions">
+                        <div class="comment-action-item" onclick="toggleCommentLike('${commentId}')">
+                            <i class="far fa-heart comment-like-icon ${isLiked ? 'liked' : ''}"></i>
+                            <span class="comment-like-count">${likeCount}</span>
+                        </div>
+                        <div class="comment-action-item" onclick="replyToComment('${authorHandle}')">
+                            <i class="fas fa-reply"></i>
+                            <span>Reply</span>
+                        </div>
+                    </div>
+                    <div class="comment-edit-area" style="display: none;">
+                        <textarea class="comment-edit-input"></textarea>
+                        <div class="comment-edit-actions">
+                            <button class="save-btn">Save</button>
+                            <button class="cancel-btn">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                ${isMyComment ? `
+                    <div class="comment-options" onclick="toggleCommentMenu(event, '${commentId}')">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </div>
+                    <ul class="comment-options-menu" id="comment-menu-${commentId}">
+                        <li onclick="editComment('${commentId}')">Edit</li>
+                        <li onclick="deleteComment('${commentId}')">Delete</li>
+                    </ul>
+                ` : ''}
+            `;
+            commentsList.appendChild(commentItem);
+        }
+
+        async function fetchComments(kooId) {
+            loadingCommentsMessage.style.display = 'block';
+            noCommentsMessage.style.display = 'none';
+            const existingComments = commentsList.querySelectorAll('.comment-item');
+            existingComments.forEach(item => item.remove());
+
+            try {
+                const snapshot = await db.collection('comments')
+                    .where('kooId', '==', kooId)
+                    .orderBy('timestamp', 'asc')
+                    .get();
+
+                loadingCommentsMessage.style.display = 'none';
+
+                if (snapshot.empty) {
+                    noCommentsMessage.style.display = 'block';
+                } else {
+                    noCommentsMessage.style.display = 'none';
+                    for (const doc of snapshot.docs) {
+                        await renderComment(doc);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching comments:", error);
+                loadingCommentsMessage.style.display = 'none';
+                commentsList.innerHTML += '<div class="no-comments-message">Failed to load comments.</div>';
+            }
+        }
+
+        // --- Comment Menu Functions ---
+        function toggleCommentMenu(event, commentId) {
+            event.stopPropagation();
+            const menu = document.getElementById(`comment-menu-${commentId}`);
+            document.querySelectorAll('.comment-options-menu').forEach(openMenu => {
+                if (openMenu.id !== `comment-menu-${commentId}`) {
+                    openMenu.style.display = 'none';
+                }
+            });
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        document.addEventListener('click', (event) => {
+            document.querySelectorAll('.comment-options-menu').forEach(menu => {
+                if (!menu.contains(event.target) && !event.target.closest('.comment-options')) {
+                    menu.style.display = 'none';
+                }
+            });
+        });
+
+        // --- Edit Comment ---
+        async function editComment(commentId) {
+            const commentItem = document.getElementById(`comment-${commentId}`);
+            const commentTextDiv = commentItem.querySelector('.comment-text');
+            const editArea = commentItem.querySelector('.comment-edit-area');
+            const editInput = commentItem.querySelector('.comment-edit-input');
+            const saveBtn = commentItem.querySelector('.save-btn');
+            const cancelBtn = commentItem.querySelector('.cancel-btn');
+
+            commentTextDiv.style.display = 'none';
+            editArea.style.display = 'block';
+            editInput.value = commentTextDiv.textContent.trim();
+            editInput.focus();
+
+            document.getElementById(`comment-menu-${commentId}`).style.display = 'none'; // Hide menu
+
+            saveBtn.onclick = async () => {
+                const newText = editInput.value.trim();
+                if (newText === '') {
+                    alert("Comment cannot be empty.");
+                    return;
+                }
+                try {
+                    await db.collection('comments').doc(commentId).update({
+                        text: newText,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    fetchComments(currentKooId); // Re-render to show update
+                } catch (error) {
+                    console.error("Error updating comment:", error);
+                    alert("Failed to update comment. Please try again.");
+                }
+            };
+
+            cancelBtn.onclick = () => {
+                commentTextDiv.style.display = 'block';
+                editArea.style.display = 'none';
+            };
+        }
+
+        // --- Delete Comment ---
+        async function deleteComment(commentId) {
+            if (!confirm("Are you sure you want to delete this comment?")) {
+                return;
+            }
+
+            try {
+                await db.collection('comments').doc(commentId).delete();
+
+                const kooRef = db.collection('koos').doc(currentKooId);
+                await kooRef.update({
+                    commentCount: firebase.firestore.FieldValue.increment(-1)
+                });
+
+                const commentElement = document.getElementById(`comment-${commentId}`);
+                if (commentElement) {
+                    commentElement.remove();
+                }
+
+                if (commentsList.children.length <= 1 && !loadingCommentsMessage.style.display === 'block') {
+                    noCommentsMessage.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error("Error deleting comment:", error);
+                alert("Failed to delete comment. Please try again.");
+            }
+        }
+
+        // --- Toggle Comment Like ---
+        async function toggleCommentLike(commentId) {
+            if (!currentLoggedInUserId) {
+                alert("You must be logged in to like comments.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            const commentRef = db.collection('comments').doc(commentId);
+            try {
+                const commentDoc = await commentRef.get();
+                if (!commentDoc.exists) return;
+
+                const commentData = commentDoc.data();
+                let likedBy = commentData.likedBy || [];
+                const isLiked = likedBy.includes(currentLoggedInUserId);
+
+                if (isLiked) {
+                    await commentRef.update({
+                        likedBy: firebase.firestore.FieldValue.arrayRemove(currentLoggedInUserId)
+                    });
+                } else {
+                    await commentRef.update({
+                        likedBy: firebase.firestore.FieldValue.arrayUnion(currentLoggedInUserId)
+                    });
+                    // Add notification to the comment author (if not self-liking)
+                    if (commentData.userId !== currentLoggedInUserId) {
+                        await db.collection('notifications').add({
+                            recipientId: commentData.userId,
+                            senderId: currentLoggedInUserId,
+                            type: 'comment_like',
+                            kooId: currentKooId,
+                            commentId: commentId,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            read: false
+                        });
+                    }
+                }
+                
+                fetchComments(currentKooId);
+
+            } catch (error) {
+                console.error("Error toggling comment like:", error);
+            }
+        }
+
+        // --- Reply to Comment ---
+        function replyToComment(handle) {
+            // Check if the handle is already at the start of the input
+            if (commentInput.value.startsWith(`@${handle} `)) {
+                // If it is, clear the handle to allow editing or direct new comment
+                commentInput.value = '';
+            } else {
+                commentInput.value = `@${handle} `;
+            }
+            commentInput.focus();
+            commentInput.dispatchEvent(new Event('input')); // Trigger input event to enable button
+        }
+
+        // --- Add Comment Functionality (existing) ---
+        commentInput.addEventListener('input', () => {
+            postCommentBtn.disabled = commentInput.value.trim() === '';
+            commentInput.style.height = 'auto';
+            commentInput.style.height = Math.min(commentInput.scrollHeight, 120) + 'px';
+        });
+
+        postCommentBtn.addEventListener('click', async () => {
+            const commentText = commentInput.value.trim();
+            if (commentText === '' || !currentLoggedInUserId || !currentKooId) {
+                alert("Please write a comment and ensure you are logged in.");
+                return;
+            }
+
+            postCommentBtn.disabled = true;
+            commentInput.disabled = true;
+
+            try {
+                await db.collection('comments').add({
+                    kooId: currentKooId,
+                    userId: currentLoggedInUserId,
+                    text: commentText,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    likedBy: []
+                });
+
+                const kooRef = db.collection('koos').doc(currentKooId);
+                await kooRef.update({
+                    commentCount: firebase.firestore.FieldValue.increment(1)
+                });
+
+                const kooDoc = await kooRef.get();
+                if (kooDoc.exists && kooDoc.data().userId !== currentLoggedInUserId) {
+                    await db.collection('notifications').add({
+                        recipientId: kooDoc.data().userId,
+                        senderId: currentLoggedInUserId,
+                        type: 'comment',
+                        kooId: currentKooId,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        read: false
+                    });
+                }
+                
+                commentInput.value = '';
+                postCommentBtn.disabled = true;
+                commentInput.disabled = false;
+                commentInput.style.height = '48px';
+
+                fetchComments(currentKooId);
+
+            } catch (error) {
+                console.error("Error posting comment:", error);
+                alert("Failed to post comment. Please try again.");
+                postCommentBtn.disabled = false;
+                commentInput.disabled = false;
+            }
+        });
+
+        function scrollToComments() {
+            document.querySelector('.comments-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function loadMyProfilePic() {
+            if (currentLoggedInUserId) {
+                currentLoggedInUserProfile = await getUserProfile(currentLoggedInUserId);
+                if (currentLoggedInUserProfile && currentLoggedInUserProfile.displayName) {
+                    currentLoggedInUserDisplayName = currentLoggedInUserProfile.displayName;
+                }
+            }
+        }
+
+        // --- Initialization ---
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                alert("You are not logged in. Redirecting to login page...");
+                window.location.href = "index.html";
+            } else {
+                currentLoggedInUserId = user.uid;
+                await loadMyProfilePic();
+
+                const urlParams = new URLSearchParams(window.location.search);
+                currentKooId = urlParams.get('kooId');
+
+                if (currentKooId) {
+                    fetchKooDetails(currentKooId);
+                    fetchComments(currentKooId);
+                } else {
+                    kooDetailsContainer.innerHTML = '<div class="no-comments-message">Koo ID is missing.</div>';
+                    loadingKooMessage.style.display = 'none';
+                    loadingCommentsMessage.style.display = 'none';
+                    noCommentsMessage.style.display = 'none';
+                    commentsList.innerHTML = '';
+                }
+            }
+        });
+
+        // Make functions globally accessible
+        window.toggleLike = toggleLike;
+        window.toggleRekoo = toggleRekoo;
+        window.scrollToComments = scrollToComments;
+        window.toggleCommentMenu = toggleCommentMenu;
+        window.editComment = editComment;
+        window.deleteComment = deleteComment;
+        window.toggleCommentLike = toggleCommentLike;
+        window.replyToComment = replyToComment;
+    </script>
+
+</body>
+</html>

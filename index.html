@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Koo Login/Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #ffcc00;
+      --primary-hover-color: #ffb700;
+      --text-color: #333;
+      --light-bg: #fffbe6;
+      --container-bg: #ffffff;
+      --border-color: #e0e0e0;
+      --shadow-color: rgba(0, 0, 0, 0.08);
+      --input-placeholder-color: #888;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--light-bg);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 420px;
+      background: var(--container-bg);
+      padding: 40px 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 30px var(--shadow-color);
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    img.logo {
+      width: 120px;
+      margin-bottom: 25px;
+      animation: fadeIn 1s ease-out;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: var(--text-color);
+      font-weight: 700;
+      font-size: 1.8em;
+    }
+
+    input {
+      width: calc(100% - 20px);
+      padding: 12px 10px;
+      margin: 10px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    input::placeholder {
+      color: var(--input-placeholder-color);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1em;
+      transition: background 0.3s ease, transform 0.2s ease;
+      margin-top: 15px;
+    }
+
+    button:hover {
+      background: var(--primary-hover-color);
+      transform: translateY(-2px);
+    }
+
+    .switch {
+      margin-top: 20px;
+      font-size: 0.95em;
+      color: var(--text-color);
+    }
+
+    .switch a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .switch a:hover {
+      color: var(--primary-hover-color);
+      text-decoration: underline;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #success-section h2 {
+      color: var(--primary-color);
+      font-size: 2.2em;
+      margin-bottom: 10px;
+    }
+
+    #welcome-msg {
+      font-size: 1.1em;
+      color: var(--text-color);
+    }
+
+    /* Styling for the loading screen */
+    #loading-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: var(--light-bg);
+      z-index: 1000;
+      /* Initially hidden, will be shown only if logged in */
+      display: none; 
+    }
+
+    #loading-section.active {
+      display: flex; /* Show when active */
+    }
+
+    #loading-section img.logo {
+      width: 150px;
+      margin-bottom: 20px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    #loading-section p {
+      font-size: 1.2em;
+      color: var(--text-color);
+      font-weight: 600;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading-section" class="hidden">
+    <img src="logo.png" class="logo" alt="App Logo">
+    <p>Checking login info...</p>
+  </div>
+
+  <div class="container hidden" id="main-content">
+    <img src="logo.png" class="logo" alt="App Logo">
+    
+    <div id="auth-section">
+      <h2 id="form-title">Login</h2>
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <button onclick="submitForm()">Login</button>
+      <div class="switch">
+        <span id="toggleText">Don't have an account?</span>
+        <a href="#" onclick="toggleForm()"> Register</a>
+      </div>
+    </div>
+
+    <div id="displayname-section" class="hidden">
+      <h2>Set Display Name</h2>
+      <input type="text" id="displayName" placeholder="Enter your display name">
+      <button onclick="saveDisplayName()">Continue</button>
+    </div>
+
+    <div id="success-section" class="hidden">
+      <h2>Welcome 🎉</h2>
+      <p id="welcome-msg"></p>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+      authDomain: "petpal-15621.firebaseapp.com",
+      projectId: "petpal-15621",
+      storageBucket: "petpal-15621.firebasestorage.app",
+      messagingSenderId: "251985816504",
+      appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
+      measurementId: "G-Z2ED9VCCZY"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let isLogin = true;
+    let isInitialLoad = true; // Flag to check if it's the very first load
+
+    // Get references to elements
+    const loadingSection = document.getElementById("loading-section");
+    const mainContent = document.getElementById("main-content");
+    const authSection = document.getElementById("auth-section");
+    const displayNameSection = document.getElementById("displayname-section");
+    const successSection = document.getElementById("success-section");
+
+
+    function toggleForm() {
+      isLogin = !isLogin;
+      document.getElementById("form-title").innerText = isLogin ? "Login" : "Register";
+      document.querySelector("#auth-section button").innerText = isLogin ? "Login" : "Register";
+      document.getElementById("toggleText").innerText = isLogin ? "Don't have an account?" : "Already have an account?";
+    }
+
+    function redirectToHome() {
+      window.location.href = "home.html";
+    }
+
+    function redirectToLoginPage() {
+        // Hide all other sections and show the main login/register content
+        loadingSection.classList.add("hidden");
+        loadingSection.classList.remove("active"); // Ensure active class is removed
+        displayNameSection.classList.add("hidden");
+        successSection.classList.add("hidden");
+        
+        authSection.classList.remove("hidden"); // Ensure auth section is visible
+        mainContent.classList.remove("hidden"); // Ensure the container is visible
+
+        // Ensure the form is always set to Login state when showing this page
+        isLogin = true; 
+        document.getElementById("form-title").innerText = "Login";
+        document.querySelector("#auth-section button").innerText = "Login";
+        document.getElementById("toggleText").innerText = "Don't have an account?";
+
+        document.getElementById("email").value = ''; // Clear email input
+        document.getElementById("password").value = ''; // Clear password input
+    }
+
+    function submitForm() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+      }
+
+      if (isLogin) {
+        auth.signInWithEmailAndPassword(email, password)
+          .then(() => checkDisplayNameAndRedirect())
+          .catch(err => alert(err.message));
+      } else {
+        auth.createUserWithEmailAndPassword(email, password)
+          .then(() => showDisplayNameSection())
+          .catch(err => alert(err.message));
+      }
+    }
+
+    function checkDisplayNameAndRedirect() {
+      const userId = auth.currentUser.uid;
+      db.collection("users").doc(userId).get().then(doc => {
+        if (doc.exists && doc.data().displayName) {
+          redirectToHome();
+        } else {
+          showDisplayNameSection();
+        }
+      }).catch(err => {
+          console.error("Error checking display name:", err);
+          alert("Error checking user profile. Please try again.");
+          loadingSection.classList.add("hidden");
+          loadingSection.classList.remove("active");
+          mainContent.classList.remove("hidden");
+      });
+    }
+
+    function showDisplayNameSection() {
+      authSection.classList.add("hidden");
+      displayNameSection.classList.remove("hidden");
+      document.getElementById("displayName").value = '';
+    }
+
+    async function saveDisplayName() {
+      const displayName = document.getElementById("displayName").value.trim();
+      if (displayName === "") {
+        alert("Please enter a display name.");
+        return;
+      }
+
+      const userId = auth.currentUser.uid;
+
+      try {
+        const usersRef = db.collection("users");
+        const snapshot = await usersRef.where('displayName', '==', displayName).get();
+
+        if (!snapshot.empty) {
+            let nameTaken = false;
+            snapshot.forEach(doc => {
+                if (doc.id !== userId) {
+                    nameTaken = true;
+                }
+            });
+            if (nameTaken) {
+                alert("This display name is already taken. Please choose another one.");
+                return;
+            }
+        }
+
+        await db.collection("users").doc(userId).set({
+            displayName: displayName,
+            email: auth.currentUser.email,
+            profilePicUrl: null,
+            followers: [],
+            following: []
+        }, { merge: true });
+
+        displayNameSection.classList.add("hidden");
+        successSection.classList.remove("hidden");
+        document.getElementById("welcome-msg").innerText = `Welcome, @${displayName}!`;
+        
+        setTimeout(() => {
+            redirectToHome();
+        }, 1500);
+
+      } catch (err) {
+        console.error("Error saving display name:", err);
+        alert("Failed to save display name. " + err.message);
+      }
+    }
+
+    // Auto check if already logged in and redirect
+    auth.onAuthStateChanged(user => {
+        if (isInitialLoad) {
+            // This runs only on the very first load of the page
+            if (user) {
+                // User is logged in, show loading screen then check display name
+                loadingSection.classList.remove("hidden");
+                loadingSection.classList.add("active"); // Show loading animation
+                mainContent.classList.add("hidden"); // Hide main content
+                checkDisplayNameAndRedirect();
+            } else {
+                // No user, directly show login page, hide loading screen
+                redirectToLoginPage();
+            }
+            isInitialLoad = false; // Set to false after initial check
+        } else {
+            // This runs for subsequent auth state changes (like logout)
+            if (!user) {
+                // User logged out or no user, show login page directly
+                redirectToLoginPage();
+            }
+            // If user is present (e.g., after login, this won't re-run auto-redirect)
+            // The submitForm and checkDisplayNameAndRedirect will handle it.
+        }
+    });
+  </script>
+</body>
+</html>

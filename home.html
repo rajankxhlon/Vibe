@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Koo Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fffbe6;
+      padding-bottom: 70px; /* Space for footer and floating button */
+    }
+
+    .header {
+      background-color: #ffcc00;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header .user-display-name {
+      margin: 0;
+      color: #000;
+      font-size: 20px;
+      font-weight: bold;
+      flex-grow: 1; /* Allows it to take available space */
+      text-align: left; /* Align to the left */
+      display: flex; /* Added for alignment with verified tick */
+      align-items: center; /* Added for alignment with verified tick */
+    }
+
+    /* Notification Icon & Badge Styles */
+    .notification-container {
+        position: relative;
+        margin-left: auto; /* Push to the far right */
+        cursor: pointer;
+        padding: 5px; /* Add some padding for easier clicking */
+    }
+
+    .notification-icon {
+        font-size: 22px;
+        color: #000;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        background-color: #ff0000; /* Red dot */
+        color: #fff;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 2px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        display: none; /* Hidden by default, show when new notifications exist */
+    }
+
+
+    /* Tabs Section */
+    .tabs-container {
+      display: flex;
+      width: 100%;
+      background-color: #fff;
+      border-bottom: 1px solid #ddd;
+      position: sticky;
+      top: 54px; /* Height of the header */
+      z-index: 9; /* Below header, above feed */
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .tab-button {
+      flex: 1; /* Distribute space evenly */
+      padding: 12px 0;
+      text-align: center;
+      font-weight: bold;
+      color: #777;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.2s ease, border-bottom 0.2s ease;
+      font-size: 16px;
+    }
+
+    .tab-button.active {
+      color: #000;
+      border-bottom-color: #ffcc00;
+    }
+
+    .tab-button:hover:not(.active) {
+      color: #555;
+    }
+
+    /* Content Sections */
+    .tab-content {
+      display: none; /* Hidden by default */
+    }
+
+    .tab-content.active {
+      display: block; /* Show active content */
+    }
+
+    /* Koo Feed Container */
+    .koo-feed {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px; /* Space between Koo cards */
+    }
+
+    /* Koo Card Styling */
+    .koo-card {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 15px;
+      border: 1px solid #eee; /* Subtle border */
+      position: relative; /* For positioning options/follow button */
+    }
+
+    .koo-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      position: relative; /* For options menu */
+    }
+
+    .profile-pic {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      cursor: pointer; /* Add cursor pointer for clickability */
+    }
+
+    .profile-initial {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #ffcc00;
+      color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-right: 10px;
+      text-transform: uppercase;
+      cursor: pointer; /* Add cursor pointer for clickability */
+    }
+
+    .username {
+      font-weight: bold;
+      color: #333;
+      font-size: 15px;
+      display: flex; /* Added for alignment with verified tick */
+      align-items: center; /* Added for alignment with verified tick */
+      cursor: pointer; /* Add cursor pointer for clickability */
+    }
+
+    .koo-timestamp {
+        font-size: 12px;
+        color: #777;
+        margin-left: 8px; /* Space from username */
+    }
+
+    .koo-text {
+      font-size: 15px;
+      color: #333;
+      line-height: 1.4;
+      white-space: pre-wrap; /* Preserves whitespace and line breaks */
+      word-wrap: break-word; /* Breaks long words */
+      margin-bottom: 10px;
+    }
+
+    .koo-image {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: block; /* Remove extra space below image */
+      height: auto; /* Maintain aspect ratio */
+      object-fit: cover; /* Cover the area, cropping if necessary */
+      max-height: 300px; /* Limit image height */
+    }
+
+    .koo-actions {
+      display: flex;
+      justify-content: space-around; /* Distribute items evenly */
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+      margin-top: 10px;
+    }
+
+    .koo-action-btn {
+      background: none;
+      border: none;
+      color: #777;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex; /* Make it a flex container to align icon and text */
+      align-items: center;
+      gap: 5px; /* Space between icon and text */
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+
+    .koo-action-btn:hover {
+      background-color: #f0f0f0;
+    }
+
+    .koo-action-btn i {
+      font-size: 18px;
+    }
+    
+    /* Active/Liked State for buttons */
+    .koo-action-btn.active, .koo-action-btn.liked {
+      color: #ff0000; /* Red for liked */
+    }
+    .koo-action-btn.rekooed {
+      color: #008000; /* Green for rekooed */
+    }
+
+
+    /* Post Options / Follow Button */
+    .post-options-container {
+        position: absolute;
+        right: 0; /* Align to the right edge of koo-header */
+        top: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .options-btn {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: #777;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        transition: background-color 0.2s ease;
+    }
+
+    .options-btn:hover {
+        background-color: #f0f0f0;
+    }
+
+    .options-menu {
+        position: absolute;
+        top: 30px; /* Adjust based on icon size */
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        z-index: 20; /* Above other content */
+        display: none; /* Hidden by default */
+        min-width: 120px;
+        overflow: hidden; /* For border-radius */
+    }
+
+    .options-menu.active {
+        display: block;
+    }
+
+    .options-menu button {
+        display: block;
+        width: 100%;
+        padding: 10px 15px;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        transition: background-color 0.2s ease;
+    }
+
+    .options-menu button:hover {
+        background-color: #f0f0f0;
+    }
+
+    .koo-follow-btn {
+        background-color: #ffcc00;
+        color: #000;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 13px;
+        transition: background-color 0.2s ease;
+        white-space: nowrap; /* Prevent button text from wrapping */
+    }
+
+    .koo-follow-btn:hover {
+        background-color: #ffdb4d;
+    }
+    .koo-follow-btn.following {
+        background-color: #e0e0e0;
+        color: #555;
+    }
+
+
+    /* People List Styling */
+    .people-list {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .person-card {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .person-card .profile-pic, .person-card .profile-initial {
+        width: 50px; /* Slightly larger for people list */
+        height: 50px;
+        font-size: 22px;
+        cursor: pointer; /* Add cursor pointer for clickability */
+    }
+
+    .person-info {
+        flex-grow: 1;
+    }
+
+    .person-name {
+        font-weight: bold;
+        color: #333;
+        font-size: 17px;
+        display: flex; /* Added for alignment with verified tick */
+        align-items: center; /* Added for alignment with verified tick */
+        cursor: pointer; /* Add cursor pointer for clickability */
+    }
+
+    .person-followers {
+        font-size: 14px;
+        color: #777;
+    }
+
+    .follow-btn { /* This is for the People tab list */
+        background-color: #ffcc00;
+        color: #000;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .follow-btn:hover {
+        background-color: #ffdb4d;
+    }
+    .follow-btn.following { /* This is for the People tab list */
+        background-color: #e0e0e0;
+        color: #555;
+    }
+
+    /* Verified Badge Styling */
+    .verified-badge {
+        width: 18px; /* Adjust size as needed */
+        height: 18px;
+        margin-left: 5px; /* Space from text */
+        flex-shrink: 0; /* Prevent it from shrinking */
+    }
+    .header .verified-badge {
+        width: 20px; /* Slightly larger for header */
+        height: 20px;
+    }
+
+
+    /* Floating Button (unchanged) */
+    .koo-btn {
+      position: fixed;
+      bottom: 70px;
+      right: 20px;
+      background: #ffcc00;
+      color: #000;
+      border: none;
+      border-radius: 30px;
+      padding: 12px 20px;
+      font-weight: bold;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      font-size: 16px;
+      z-index: 50; /* Ensure it's above other content */
+    }
+
+    /* Footer (unchanged) */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 60px;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      z-index: 100; /* Ensure footer is always on top */
+    }
+
+    .footer i {
+      font-size: 22px;
+      color: #000;
+      cursor: pointer;
+    }
+
+    /* No Koos message (unchanged) */
+    .no-koos-message {
+      text-align: center;
+      padding: 50px 20px;
+      color: #777;
+      font-size: 16px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="user-display-name" id="currentUsername">Loading...</span>
+    <div class="notification-container" onclick="window.location.href='notifications.html'">
+        <i class="fas fa-bell notification-icon" title="Notifications"></i>
+        <span class="notification-badge" id="notificationBadge">0</span>
+    </div>
+  </div>
+
+  <div class="tabs-container">
+    <button class="tab-button active" onclick="openTab(event, 'feed')">Feed</button>
+    <button class="tab-button" onclick="openTab(event, 'people')">People</button>
+  </div>
+
+  <div id="feed" class="tab-content active">
+    <div class="koo-feed" id="kooFeed">
+      <div class="no-koos-message" id="loadingMessage">Loading Koos...</div>
+      </div>
+  </div>
+
+  <div id="people" class="tab-content">
+    <div class="people-list" id="peopleList">
+        <div class="no-koos-message" id="loadingPeopleMessage">Loading People...</div>
+        <div class="no-koos-message" id="noPeopleMessage" style="display: none;">No other users found.</div>
+    </div>
+  </div>
+
+
+  <button class="koo-btn" onclick="window.location.href='create.html'">Koo +</button>
+
+  <div class="footer">
+    <i class="fas fa-home" title="Home" onclick="window.location.href='home.html'"></i>
+    <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
+    <i class="fas fa-search" title="Search" onclick="window.location.href='search.html'"></i>
+    <i class="fas fa-user-circle" title="Profile" onclick="window.location.href='profile.html'"></i>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+      authDomain: "petpal-15621.firebaseapp.com",
+      projectId: "petpal-15621",
+      storageBucket: "petpal-15621.firebaseastorage.app",
+      messagingSenderId: "251985816504",
+      appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
+      measurementId: "G-Z2ED9VCCZY"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const currentUsernameSpan = document.getElementById('currentUsername');
+    const kooFeed = document.getElementById('kooFeed');
+    const loadingMessage = document.getElementById('loadingMessage');
+    
+    const peopleListDiv = document.getElementById('peopleList');
+    const loadingPeopleMessage = document.getElementById('loadingPeopleMessage');
+    const noPeopleMessage = document.getElementById('noPeopleMessage');
+
+    const notificationBadge = document.getElementById('notificationBadge');
+
+
+    let currentLoggedInUserId = null;
+
+    // SVG for the verified badge
+    const verifiedBadgeSvg = `
+        <svg class="verified-badge" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+            <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+            </g>
+        </svg>
+    `;
+
+
+    // --- Logout Function (Now triggered by a specific logout button if needed, not notification) ---
+    function logout() {
+      auth.signOut().then(() => {
+        alert("Logged out successfully!");
+        window.location.href = "index.html"; // Redirect to login page
+      }).catch((error) => {
+        console.error("Error logging out:", error);
+        alert("Failed to log out. Please try again.");
+      });
+    }
+
+    // --- Tab Switching Logic ---
+    function openTab(evt, tabName) {
+      const tabContents = document.getElementsByClassName('tab-content');
+      for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove('active');
+      }
+
+      const tabButtons = document.getElementsByClassName('tab-button');
+      for (let i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].classList.remove('active');
+      }
+
+      document.getElementById(tabName).classList.add('active');
+      
+      // Handle the event target for tab button activation
+      if (evt && evt.currentTarget) {
+          evt.currentTarget.classList.add('active');
+      } else {
+          // If no event (e.g., called on page load), find the correct button
+          const targetButton = Array.from(tabButtons).find(button => 
+              button.textContent.toLowerCase().includes(tabName.toLowerCase())
+          );
+          if (targetButton) {
+              targetButton.classList.add('active');
+          }
+      }
+
+      if (tabName === 'feed') {
+        fetchKoos();
+      } else if (tabName === 'people') {
+        fetchPeople();
+      }
+    }
+
+    // --- Utility Functions ---
+    function formatTimestamp(timestamp) {
+      if (!timestamp) return '';
+      const date = timestamp.toDate();
+      const now = new Date();
+      const diff = now.getTime() - date.getTime();
+
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      if (seconds < 60) return `${seconds}s ago`;
+      if (minutes < 60) return `${minutes}m ago`;
+      if (hours < 24) return `${hours}h ago`;
+      if (days < 7) return `${days}d ago`;
+      
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    async function getUserProfile(userId) {
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                return { id: userDoc.id, ...userDoc.data() }; // Return ID as well
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+            return null;
+        }
+    }
+
+    // --- New function to navigate to user profile ---
+    function goToUserProfile(userId) {
+        window.location.href = `user_profile.html?userId=${userId}`;
+    }
+
+    // Fisher-Yates (Knuth) Shuffle algorithm (no longer used for feed, but good to keep as utility)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        }
+    }
+
+
+    // --- Koo Feed Logic ---
+    async function renderKoo(koo) {
+      const userProfile = await getUserProfile(koo.userId);
+      const profilePicUrl = userProfile && userProfile.profilePicUrl ? userProfile.profilePicUrl : null;
+      const displayUsername = userProfile && userProfile.displayName ? userProfile.displayName : (koo.username || 'Anonymous');
+      const isUserVerified = userProfile && userProfile.isVerified === true; // Check for verified status
+      const firstLetter = displayUsername.charAt(0).toUpperCase();
+
+      const kooCard = document.createElement('div');
+      kooCard.className = 'koo-card';
+      kooCard.id = `koo-${koo.id}`;
+
+      const isMyPost = (koo.userId === currentLoggedInUserId);
+      const hasLiked = koo.likes && koo.likes.includes(currentLoggedInUserId);
+      const rekooCount = koo.rekoos ? koo.rekoos.length : 0;
+      const likeCount = koo.likes ? koo.likes.length : 0;
+
+      let headerActionHtml = '';
+      if (isMyPost) {
+          headerActionHtml = `
+              <div class="post-options-container">
+                  <button class="options-btn" onclick="togglePostOptions(this, '${koo.id}')"><i class="fas fa-ellipsis-h"></i></button>
+                  <div class="options-menu" id="options-menu-${koo.id}">
+                      <button onclick="editPost('${koo.id}')">Edit Post</button>
+                      <button onclick="deletePost('${koo.id}')">Delete Post</button>
+                  </div>
+              </div>
+          `;
+      } else {
+          const currentUserProfile = await getUserProfile(currentLoggedInUserId);
+          const isFollowing = currentUserProfile && currentUserProfile.following && currentUserProfile.following.includes(koo.userId);
+          
+          headerActionHtml = `
+              <div class="post-options-container">
+                  <button class="koo-follow-btn ${isFollowing ? 'following' : ''}" data-user-id="${koo.userId}" onclick="toggleFollow(this, '${koo.userId}')">
+                      ${isFollowing ? 'Following' : 'Follow'}
+                  </button>
+              </div>
+          `;
+      }
+
+      kooCard.innerHTML = `
+        <div class="koo-header">
+          ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic" onclick="goToUserProfile('${koo.userId}')">` : `<div class="profile-initial" onclick="goToUserProfile('${koo.userId}')">${firstLetter}</div>`}
+          <span class="username" onclick="goToUserProfile('${koo.userId}')">
+            ${displayUsername}
+            ${isUserVerified ? verifiedBadgeSvg : ''} </span>
+          <span class="koo-timestamp">${formatTimestamp(koo.timestamp)}</span>
+          ${headerActionHtml}
+        </div>
+        <p class="koo-text">${koo.text}</p>
+        ${koo.imageUrl ? `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">` : ''}
+        <div class="koo-actions">
+          <button class="koo-action-btn ${hasLiked ? 'liked' : ''}" onclick="toggleLike('${koo.id}')">
+            <i class="${hasLiked ? 'fas' : 'far'} fa-heart"></i> <span id="like-count-${koo.id}">${likeCount}</span>
+          </button>
+          <button class="koo-action-btn" onclick="openComments('${koo.id}')">
+            <i class="far fa-comment"></i> Comment
+          </button>
+          <button class="koo-action-btn" onclick="rekooPost('${koo.id}')">
+            <i class="fas fa-retweet"></i> <span id="rekoo-count-${koo.id}">${rekooCount > 0 ? rekooCount : ''}</span>
+          </button>
+        </div>
+      `;
+      
+      kooFeed.appendChild(kooCard);
+    }
+
+    function togglePostOptions(button, kooId) {
+        const menu = document.getElementById(`options-menu-${kooId}`);
+        document.querySelectorAll('.options-menu.active').forEach(openMenu => {
+            if (openMenu.id !== `options-menu-${kooId}`) {
+                openMenu.classList.remove('active');
+            }
+        });
+        menu.classList.toggle('active');
+
+        document.addEventListener('click', function closeMenu(event) {
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.classList.remove('active');
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }
+
+    function editPost(kooId) {
+        alert(`Edit post with ID: ${kooId}`);
+        document.getElementById(`options-menu-${kooId}`).classList.remove('active');
+    }
+
+    async function deletePost(kooId) {
+        if (confirm("Are you sure you want to delete this Koo?")) {
+            try {
+                await db.collection("koos").doc(kooId).delete();
+                alert("Koo deleted successfully!");
+                document.getElementById(`koo-${kooId}`).remove();
+            } catch (error) {
+                console.error("Error deleting Koo:", error);
+                alert("Failed to delete Koo. Please try again.");
+            }
+        }
+        document.getElementById(`options-menu-${kooId}`).classList.remove('active');
+    }
+
+    // --- Like/Unlike Functionality ---
+    async function toggleLike(kooId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to like posts.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        const kooRef = db.collection('koos').doc(kooId);
+        try {
+            const doc = await kooRef.get();
+            if (!doc.exists) return;
+
+            const kooData = doc.data();
+            let likes = kooData.likes || [];
+            const hasLiked = likes.includes(currentLoggedInUserId);
+
+            if (hasLiked) {
+                likes = likes.filter(uid => uid !== currentLoggedInUserId);
+            } else {
+                likes.push(currentLoggedInUserId);
+                // Add notification for the koo author
+                const kooAuthorId = kooData.userId;
+                if (kooAuthorId !== currentLoggedInUserId) { // Don't notify self
+                    await db.collection('notifications').add({
+                        recipientId: kooAuthorId,
+                        senderId: currentLoggedInUserId,
+                        type: 'like',
+                        kooId: kooId,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        read: false
+                    });
+                }
+            }
+
+            await kooRef.update({ likes: likes });
+
+            const likeButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(1)`);
+            const likeIcon = likeButton.querySelector('i');
+            const likeCountSpan = document.getElementById(`like-count-${kooId}`);
+
+            if (hasLiked) {
+                likeIcon.classList.remove('fas', 'liked');
+                likeIcon.classList.add('far');
+            } else {
+                likeIcon.classList.remove('far');
+                likeIcon.classList.add('fas', 'liked');
+            }
+            likeCountSpan.textContent = likes.length;
+
+        } catch (error) {
+            console.error("Error toggling like:", error);
+            // Removed: alert("Failed to update like status. Please try again.");
+        }
+    }
+
+    // --- Comments Navigation ---
+    function openComments(kooId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to view comments.");
+            window.location.href = "index.html";
+            return;
+        }
+        window.location.href = `comments.html?kooId=${kooId}`;
+    }
+
+    // --- Rekoo (Repost) Functionality ---
+    async function rekooPost(kooId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to rekoo posts.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        const kooRef = db.collection('koos').doc(kooId);
+        try {
+            const doc = await kooRef.get();
+            if (!doc.exists) return;
+
+            const kooData = doc.data();
+            let rekoos = kooData.rekoos || [];
+            const hasRekooed = rekoos.includes(currentLoggedInUserId);
+
+            if (hasRekooed) {
+                alert("You've already rekooed this post. To simplify, we won't un-rekoo.");
+                return; 
+            } else {
+                rekoos.push(currentLoggedInUserId);
+                // Add notification for the koo author
+                const kooAuthorId = kooData.userId;
+                if (kooAuthorId !== currentLoggedInUserId) { // Don't notify self
+                    await db.collection('notifications').add({
+                        recipientId: kooAuthorId,
+                        senderId: currentLoggedInUserId,
+                        type: 'rekoo',
+                        kooId: kooId,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        read: false
+                    });
+                }
+            }
+
+            await kooRef.update({ rekoos: rekoos });
+
+            const rekooButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(3)`);
+            const rekooCountSpan = document.getElementById(`rekoo-count-${kooId}`);
+
+            rekooButton.classList.add('rekooed');
+            rekooCountSpan.textContent = rekoos.length > 0 ? rekoos.length : '';
+            alert("Koo rekooed!");
+
+        } catch (error) {
+            console.error("Error rekooing post:", error);
+            alert("Failed to rekoo post. Please try again.");
+        }
+    }
+
+
+    async function fetchKoos() {
+      loadingMessage.style.display = 'block';
+      kooFeed.innerHTML = ''; // Clear previous list items, keeps loading message visible
+
+      try {
+        const querySnapshot = await db.collection("koos").orderBy("timestamp", "desc").get(); // Order by timestamp
+        const koos = [];
+        querySnapshot.forEach(doc => {
+            koos.push({ ...doc.data(), id: doc.id });
+        });
+        
+        loadingMessage.style.display = 'none';
+
+        if (koos.length === 0) {
+          kooFeed.innerHTML = '<div class="no-koos-message">No Koos yet! Be the first to post.</div>';
+        } else {
+          for (const koo of koos) {
+              await renderKoo(koo);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching Koos:", error);
+        loadingMessage.style.display = 'none';
+        kooFeed.innerHTML = '<div class="no-koos-message">Failed to load Koos. Please try again.</div>';
+        alert("Failed to load Koos. Please try again.");
+      }
+    }
+
+    db.collection("koos").onSnapshot((snapshot) => {
+        // Only update if the 'feed' tab is currently active to avoid unnecessary rendering
+        if (!document.getElementById('feed').classList.contains('active')) {
+            return; 
+        }
+
+        // Keep track of Koo IDs currently rendered to avoid duplicates
+        const currentKooIds = new Set();
+        document.querySelectorAll('.koo-card').forEach(card => currentKooIds.add(card.id.replace('koo-', '')));
+
+        snapshot.docChanges().forEach(async (change) => {
+            const kooData = { ...change.doc.data(), id: change.doc.id };
+            const existingKooCard = document.getElementById(`koo-${kooData.id}`);
+
+            if (change.type === "added") {
+                if (!existingKooCard && !currentKooIds.has(kooData.id)) { // Double check to prevent duplicates
+                    await renderKoo(kooData);
+                    const newCard = document.getElementById(`koo-${kooData.id}`);
+                    if (newCard) {
+                        kooFeed.prepend(newCard); // Always prepend new Koos to the top
+                        currentKooIds.add(kooData.id);
+                    }
+                }
+            } else if (change.type === "modified") {
+                if (existingKooCard) {
+                    existingKooCard.remove(); // Remove old version
+                    currentKooIds.delete(kooData.id);
+                }
+                await renderKoo(kooData); // Render updated version
+                const updatedCard = document.getElementById(`koo-${kooData.id}`);
+                if (updatedCard) {
+                    kooFeed.prepend(updatedCard); // Add to top
+                    currentKooIds.add(kooData.id);
+                }
+            } else if (change.type === "removed") {
+                if (existingKooCard) {
+                    existingKooCard.remove();
+                    currentKooIds.delete(kooData.id);
+                }
+            }
+        });
+        
+        // After all changes, manage the loading/no-koos messages
+        loadingMessage.style.display = 'none';
+        const kooCards = kooFeed.querySelectorAll('.koo-card');
+        if (kooCards.length === 0) {
+            if (!kooFeed.querySelector('.no-koos-message')) { // Add only if not already present
+                kooFeed.innerHTML = '<div class="no-koos-message">No Koos yet! Be the first to post.</div>';
+            }
+        } else {
+            // Remove the "No Koos yet!" message if it exists and there are cards
+            const noKoosMsgElem = kooFeed.querySelector('.no-koos-message');
+            if (noKoosMsgElem && noKoosMsgElem.textContent.includes('No Koos yet!')) {
+                noKoosMsgElem.remove();
+            }
+        }
+    }, (error) => {
+        console.error("Error listening to Koos:", error);
+        loadingMessage.style.display = 'none';
+        kooFeed.innerHTML = '<div class="no-koos-message">Failed to load Koos. Please try again.</div>';
+        alert("Failed to subscribe to Koo updates.");
+    });
+
+
+    // --- People Section Logic ---
+    async function renderPersonCard(user) {
+      const currentUser = auth.currentUser;
+      const currentUserId = currentUser ? currentUser.uid : null;
+      
+      // Exclude the currently logged-in user from the list
+      if (user.id === currentUserId) {
+          return;
+      }
+
+      const profilePicUrl = user.profilePicUrl ? user.profilePicUrl : null;
+      // Use displayName if available, otherwise fall back to a part of the email
+      const displayUsername = user.displayName || (user.email ? user.email.split('@')[0] : 'Unknown User');
+      const isUserVerified = user.isVerified === true; // Check for verified status
+      const firstLetter = displayUsername.charAt(0).toUpperCase();
+      const followerCount = user.followers ? user.followers.length : 0;
+
+      const personCard = document.createElement('div');
+      personCard.className = 'person-card';
+      personCard.id = `user-${user.id}`; // Give each card a unique ID
+
+      personCard.innerHTML = `
+        ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic" onclick="goToUserProfile('${user.id}')">` : `<div class="profile-initial" onclick="goToUserProfile('${user.id}')">${firstLetter}</div>`}
+        <div class="person-info">
+            <span class="person-name" onclick="goToUserProfile('${user.id}')">
+                ${displayUsername}
+                ${isUserVerified ? verifiedBadgeSvg : ''} </span>
+            <span class="person-followers">${followerCount} Followers</span>
+        </div>
+        <button class="follow-btn" data-user-id="${user.id}">Follow</button>
+      `;
+      peopleListDiv.appendChild(personCard);
+
+      const followButton = personCard.querySelector('.follow-btn');
+      // Attach event listener for follow/unfollow
+      followButton.addEventListener('click', () => toggleFollow(followButton, user.id));
+
+      // Update the button's initial state
+      await updateFollowButton(followButton, user.id);
+    }
+
+    async function fetchPeople() {
+        loadingPeopleMessage.style.display = 'block';
+        noPeopleMessage.style.display = 'none';
+        peopleListDiv.innerHTML = ''; // Clear previous list items, keep loading message
+
+        try {
+            const usersSnapshot = await db.collection('users').get();
+            let allUsers = [];
+            usersSnapshot.forEach(doc => {
+                allUsers.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Filter out the currently logged-in user
+            allUsers = allUsers.filter(user => user.id !== currentLoggedInUserId);
+
+            // Sort users by follower count (descending)
+            allUsers.sort((a, b) => (b.followers ? b.followers.length : 0) - (a.followers ? a.followers.length : 0));
+
+            loadingPeopleMessage.style.display = 'none';
+
+            if (allUsers.length === 0) {
+                noPeopleMessage.style.display = 'block'; // Show if no other users found
+            } else {
+                noPeopleMessage.style.display = 'none'; // Hide if users are found
+                for (const user of allUsers) {
+                    await renderPersonCard(user);
+                }
+            }
+
+        } catch (error) {
+            console.error("Error fetching people:", error);
+            loadingPeopleMessage.style.display = 'none';
+            alert("Failed to load people. Please try again.");
+        }
+    }
+
+    async function toggleFollow(button, targetUserId) {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            alert("You must be logged in to follow users.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        const currentUserRef = db.collection('users').doc(currentUser.uid);
+        const targetUserRef = db.collection('users').doc(targetUserId);
+
+        try {
+            const [currentUserDoc, targetUserDoc] = await Promise.all([
+                currentUserRef.get(),
+                targetUserRef.get()
+            ]);
+
+            const currentUserData = currentUserDoc.data() || {};
+            const targetUserData = targetUserDoc.data() || {};
+
+            let currentUserFollowing = currentUserData.following || [];
+            let targetUserFollowers = targetUserData.followers || [];
+
+            const isFollowing = currentUserFollowing.includes(targetUserId);
+
+            const batch = db.batch();
+
+            if (isFollowing) {
+                // Unfollow
+                batch.update(currentUserRef, { following: firebase.firestore.FieldValue.arrayRemove(targetUserId) });
+                batch.update(targetUserRef, { followers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
+            } else {
+                // Follow
+                batch.update(currentUserRef, { following: firebase.firestore.FieldValue.arrayUnion(targetUserId) });
+                batch.update(targetUserRef, { followers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
+
+                // Add follower notification
+                await db.collection('notifications').add({
+                    recipientId: targetUserId, // The user being followed gets the notification
+                    senderId: currentUser.uid, // The user who followed
+                    type: 'follow',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    read: false
+                });
+            }
+
+            await batch.commit();
+
+            await updateFollowButton(button, targetUserId); // Re-render button state
+            
+            // Update follower count displayed on the card
+            const followerCountSpan = button.closest('.person-card') ? button.closest('.person-card').querySelector('.person-followers') : null;
+            if (followerCountSpan) {
+                const updatedTargetUserDoc = await targetUserRef.get();
+                const updatedTargetUserData = updatedTargetUserDoc.data();
+                const newFollowerCount = updatedTargetUserData.followers ? updatedTargetUserData.followers.length : 0;
+                followerCountSpan.textContent = `${newFollowerCount} Followers`;
+            }
+
+        } catch (error) {
+            console.error("Error toggling follow status:", error);
+            alert("Failed to update follow status. Please try again.");
+        }
+    }
+
+    async function updateFollowButton(button, targetUserId) {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            button.textContent = "Follow";
+            button.disabled = true; // Disable if not logged in
+            return;
+        }
+
+        const currentUserDoc = await db.collection('users').doc(currentUser.uid).get();
+        const currentUserData = currentUserDoc.data();
+        const isFollowing = currentUserData && currentUserData.following && currentUserData.following.includes(targetUserId);
+
+        if (isFollowing) {
+            button.textContent = "Following";
+            button.classList.add('following');
+        } else {
+            button.textContent = "Follow";
+            button.classList.remove('following');
+        }
+        button.disabled = false; // Enable once state is determined
+    }
+
+
+    // --- Notification Badge Logic (Only for home.html) ---
+    async function updateNotificationBadge() {
+        if (!currentLoggedInUserId) {
+            notificationBadge.style.display = 'none';
+            notificationBadge.textContent = '0';
+            return;
+        }
+        try {
+            const snapshot = await db.collection('notifications')
+                .where('recipientId', '==', currentLoggedInUserId)
+                .where('read', '==', false)
+                .get();
+            
+            const unreadCount = snapshot.size;
+            if (unreadCount > 0) {
+                notificationBadge.textContent = unreadCount;
+                notificationBadge.style.display = 'flex'; // Show badge
+            } else {
+                notificationBadge.style.display = 'none'; // Hide badge
+            }
+        } catch (error) {
+            console.error("Error updating notification badge:", error);
+            notificationBadge.style.display = 'none';
+        }
+    }
+
+    // Real-time listener for notifications (to update badge)
+    // This listener should only be set up ONCE after currentLoggedInUserId is known.
+    let notificationsListenerUnsubscribe = null; // To store the unsubscribe function
+
+    function setupNotificationsListener() {
+        if (notificationsListenerUnsubscribe) {
+            notificationsListenerUnsubscribe(); // Unsubscribe from previous listener if it exists
+        }
+        if (currentLoggedInUserId) {
+            notificationsListenerUnsubscribe = db.collection('notifications')
+                .where('recipientId', '==', currentLoggedInUserId)
+                .onSnapshot(async (snapshot) => {
+                    await updateNotificationBadge();
+                }, (error) => {
+                    console.error("Error listening to notifications:", error);
+                });
+        }
+    }
+
+
+    // --- Initialization ---
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        alert("You are not logged in. Redirecting...");
+        window.location.href = "index.html";
+      } else {
+        currentLoggedInUserId = user.uid;
+        const currentUserProfile = await getUserProfile(user.uid);
+        const currentDisplayName = currentUserProfile && currentUserProfile.displayName ? currentUserProfile.displayName : user.email.split('@')[0];
+        
+        currentUsernameSpan.innerHTML = `@${currentDisplayName}`;
+        // Add verified badge to header if current user is verified
+        if (currentUserProfile && currentUserProfile.isVerified === true) {
+            currentUsernameSpan.insertAdjacentHTML('beforeend', verifiedBadgeSvg);
+        }
+
+        // Call openTab without an event object, it will find the correct button
+        openTab(null, 'feed'); 
+        updateNotificationBadge(); // Initial badge check on load
+        setupNotificationsListener(); // Setup the real-time notification listener
+      }
+    });
+
+    // Footer Navigation (Unchanged)
+    document.querySelector('.footer .fa-home').onclick = () => window.location.href='home.html';
+    document.querySelector('.footer .fa-hashtag').onclick = () => window.location.href='trending.html';
+    document.querySelector('.footer .fa-search').onclick = () => window.location.href='search.html';
+    document.querySelector('.footer .fa-user-circle').onclick = () => window.location.href='profile.html';
+
+    // Ensure initial tab is set if auth state is already determined
+    // This handles cases where user might already be logged in and page refreshes.
+    document.addEventListener('DOMContentLoaded', () => {
+        if (auth.currentUser) {
+            openTab(null, 'feed');
+        }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Profile - Koo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fffbe6;
+      padding-bottom: 70px; /* Space for footer */
+    }
+
+    .header {
+      background-color: #ffcc00;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header .back-icon {
+        font-size: 22px;
+        color: #000;
+        cursor: pointer;
+        margin-right: 15px;
+    }
+
+    .header .page-title {
+        margin: 0;
+        color: #000;
+        font-size: 20px;
+        font-weight: bold;
+        flex-grow: 1;
+    }
+
+    /* Three-dot menu styles */
+    .header .more-options-container {
+        position: relative;
+        margin-left: auto; /* Push to the right */
+    }
+
+    .header .more-options-btn {
+        background: none;
+        border: none;
+        font-size: 22px;
+        color: #000;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        transition: background-color 0.2s ease;
+    }
+
+    .header .more-options-btn:hover {
+        background-color: #ffdb4d;
+    }
+
+    .header .options-menu {
+        position: absolute;
+        top: 40px; /* Position below the button */
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        z-index: 20;
+        display: none; /* Hidden by default */
+        min-width: 150px;
+        overflow: hidden;
+    }
+
+    .header .options-menu.active {
+        display: block;
+    }
+
+    .header .options-menu button {
+        display: block;
+        width: 100%;
+        padding: 10px 15px;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 15px;
+        color: #333;
+        transition: background-color 0.2s ease;
+    }
+
+    .header .options-menu button:hover {
+        background-color: #f0f0f0;
+    }
+
+
+    /* Profile Card */
+    .profile-card {
+      background-color: #fff;
+      padding: 20px;
+      margin: 15px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+      position: relative;
+    }
+
+    .profile-pic-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 15px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid #ffcc00;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0; /* Placeholder background */
+      cursor: pointer; /* Indicate it's clickable */
+    }
+
+    .profile-pic {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-initial {
+      font-size: 40px;
+      font-weight: bold;
+      color: #000;
+      text-transform: uppercase;
+    }
+
+    .edit-pic-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 5px 0;
+      font-size: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .profile-pic-container:hover .edit-pic-overlay {
+      opacity: 1;
+    }
+
+    .username {
+      font-size: 22px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .profession, .bio {
+        font-size: 15px;
+        color: #555;
+        margin-bottom: 5px;
+        white-space: pre-wrap; /* Preserve line breaks */
+        word-wrap: break-word;
+        padding: 0 15px; /* Add some padding to prevent text from touching edges */
+    }
+    .bio {
+        margin-top: 10px;
+        margin-bottom: 15px;
+        color: #444;
+    }
+
+    .edit-profile-btn {
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 8px 15px;
+        font-size: 14px;
+        color: #555;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 10px;
+        transition: background-color 0.2s ease;
+    }
+    .edit-profile-btn:hover {
+        background-color: #e0e0e0;
+    }
+
+
+    .stats-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-count {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #777;
+    }
+
+    /* My Koos Section */
+    .my-koos-section {
+      margin: 15px;
+      padding: 0 0 15px; /* Add bottom padding */
+      background-color: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .my-koos-section h2 {
+      font-size: 20px;
+      color: #333;
+      padding: 15px 20px;
+      margin: 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .my-koos-feed {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    /* Koo Card Styling (reused from home.html) */
+    .koo-card {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 15px;
+      border: 1px solid #eee;
+      position: relative;
+    }
+
+    .koo-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .koo-header .profile-pic {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+    }
+
+    .koo-header .profile-initial {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #ffcc00;
+        color: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 18px;
+        font-weight: bold;
+        margin-right: 10px;
+        text-transform: uppercase;
+    }
+
+    .username-koo { /* Different class to avoid conflict with main username */
+      font-weight: bold;
+      color: #333;
+      font-size: 15px;
+    }
+
+    .koo-timestamp {
+        font-size: 12px;
+        color: #777;
+        margin-left: 8px;
+    }
+
+    .koo-text {
+      font-size: 15px;
+      color: #333;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-bottom: 10px;
+    }
+
+    .koo-image {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: block;
+      height: auto;
+      object-fit: cover;
+      max-height: 300px;
+    }
+
+    .koo-actions {
+      display: flex;
+      justify-content: space-around;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+      margin-top: 10px;
+    }
+
+    .koo-action-btn {
+      background: none;
+      border: none;
+      color: #777;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+
+    .koo-action-btn:hover {
+      background-color: #f0f0f0;
+    }
+
+    .koo-action-btn i {
+      font-size: 18px;
+    }
+    
+    .koo-action-btn.liked {
+      color: #ff0000;
+    }
+    .koo-action-btn.rekooed {
+      color: #008000;
+    }
+
+    /* Post Options / Follow Button */
+    .post-options-container {
+        position: absolute;
+        right: 0; /* Align to the right edge of koo-header */
+        top: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .options-btn {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: #777;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        transition: background-color 0.2s ease;
+    }
+
+    .options-btn:hover {
+        background-color: #f0f0f0;
+    }
+
+    .options-menu {
+        position: absolute;
+        top: 30px; /* Adjust based on icon size */
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        z-index: 20;
+        display: none; /* Hidden by default */
+        min-width: 120px;
+        overflow: hidden;
+    }
+
+    .options-menu.active {
+        display: block;
+    }
+
+    .options-menu button {
+        display: block;
+        width: 100%;
+        padding: 10px 15px;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        transition: background-color 0.2s ease;
+    }
+
+    .options-menu button:hover {
+        background-color: #f0f0f0;
+    }
+
+    /* No Koos message */
+    .no-koos-message {
+      text-align: center;
+      padding: 50px 20px;
+      color: #777;
+      font-size: 16px;
+    }
+
+    /* Hidden file input */
+    #profilePicInput {
+        display: none;
+    }
+
+    /* Loader */
+    .loader {
+        border: 4px solid #f3f3f3; /* Light grey */
+        border-top: 4px solid #ffcc00; /* Yellow */
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: none; /* Hidden by default */
+        position: absolute;
+        top: calc(50% - 10px);
+        left: calc(50% - 10px);
+        z-index: 1;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Footer (reused from home.html) */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 60px;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+
+    .footer i {
+      font-size: 22px;
+      color: #000;
+      cursor: pointer;
+    }
+
+
+    /* --- Modal Styles --- */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 101; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        animation: fadeIn 0.3s forwards;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto; /* 15% from the top and centered */
+        padding: 25px;
+        border: 1px solid #888;
+        border-radius: 10px;
+        width: 80%; /* Could be more responsive */
+        max-width: 400px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        position: relative;
+        animation: slideInTop 0.3s forwards;
+    }
+
+    @keyframes fadeIn {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+
+    @keyframes slideInTop {
+        from {transform: translateY(-50px); opacity: 0;}
+        to {transform: translateY(0); opacity: 1;}
+    }
+
+    .close-button {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        position: absolute;
+        top: 10px;
+        right: 15px;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .modal-content h2 {
+        margin-top: 0;
+        font-size: 20px;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .modal-content label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #555;
+        font-size: 14px;
+        text-align: left;
+    }
+
+    .modal-content input[type="text"],
+    .modal-content textarea {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        box-sizing: border-box; /* Include padding in width */
+    }
+
+    .modal-content textarea {
+        resize: vertical;
+        min-height: 80px;
+        max-height: 150px;
+    }
+
+    .modal-buttons {
+        display: flex;
+        justify-content: flex-end; /* Align buttons to the right */
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .modal-buttons button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 20px;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .modal-buttons .cancel-btn {
+        background-color: #ddd;
+        color: #555;
+    }
+
+    .modal-buttons .cancel-btn:hover {
+        background-color: #ccc;
+    }
+
+    .modal-buttons .save-btn {
+        background-color: #ffcc00;
+        color: #000;
+    }
+
+    .modal-buttons .save-btn:hover {
+        background-color: #ffdb4d;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <i class="fas fa-arrow-left back-icon" onclick="window.history.back()"></i>
+    <span class="page-title">My Profile</span>
+    <div class="more-options-container">
+        <button class="more-options-btn" onclick="toggleHeaderOptions(this)"><i class="fas fa-ellipsis-v"></i></button>
+        <div class="options-menu" id="headerOptionsMenu">
+            <button onclick="navigateToPage('verification.html')">Verification</button>
+            <button onclick="navigateToPage('settings.html')">Settings</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+  </div>
+
+  <div class="profile-card">
+    <div class="profile-pic-container" id="profilePicContainer">
+      <img src="" alt="Profile Picture" class="profile-pic" id="profilePic" style="display: none;">
+      <div class="profile-initial" id="profileInitial"></div>
+      <div class="loader" id="profilePicLoader"></div>
+      <div class="edit-pic-overlay">
+        <i class="fas fa-camera"></i> <span>Edit</span>
+      </div>
+    </div>
+    <input type="file" id="profilePicInput" accept="image/*">
+    
+    <h1 class="username" id="profileUsername">Loading...</h1>
+    <p class="profession" id="profileProfession" style="display: none;"></p>
+    <p class="bio" id="profileBio" style="display: none;"></p>
+
+    <button class="edit-profile-btn" id="editProfileBtn">
+        <i class="fas fa-pencil-alt"></i> Edit Profile
+    </button>
+
+    <div class="stats-container">
+      <div class="stat-item">
+        <div class="stat-count" id="kooCount">0</div>
+        <div class="stat-label">Koos</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-count" id="followersCount">0</div>
+        <div class="stat-label">Followers</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-count" id="followingCount">0</div>
+        <div class="stat-label">Following</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="my-koos-section">
+    <h2>My Koos</h2>
+    <div class="my-koos-feed" id="myKoosFeed">
+      <div class="no-koos-message" id="loadingMyKoos">Loading your Koos...</div>
+      <div class="no-koos-message" id="noMyKoos" style="display: none;">You haven't posted any Koos yet!</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <i class="fas fa-home" title="Home" onclick="window.location.href='home.html'"></i>
+    <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
+    <i class="fas fa-search" title="Search" onclick="window.location.href='search.html'"></i>
+    <i class="fas fa-user-circle" title="Profile" onclick="window.location.href='profile.html'"></i>
+  </div>
+
+  <div id="editProfileModal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="closeModalBtn">&times;</span>
+      <h2>Edit Your Profile</h2>
+      <label for="editProfession">Profession:</label>
+      <input type="text" id="editProfession" placeholder="e.g., Software Engineer">
+      
+      <label for="editBio">Bio:</label>
+      <textarea id="editBio" placeholder="Tell us about yourself..."></textarea>
+      
+      <div class="modal-buttons">
+        <button class="cancel-btn" id="cancelEditBtn">Cancel</button>
+        <button class="save-btn" id="saveProfileBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase Config (use your actual config)
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+      authDomain: "petpal-15621.firebaseapp.com",
+      projectId: "petpal-15621",
+      storageBucket: "petpal-15621.firebasestorage.app",
+      messagingSenderId: "251985816504",
+      appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
+      measurementId: "G-Z2ED9VCCZY"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ImgBB API Key
+    const IMGBB_API_KEY = "0ba537e52261b0060dd1bc0b926212b4";
+
+    // DOM Elements
+    const profilePicContainer = document.getElementById('profilePicContainer');
+    const profilePicInput = document.getElementById('profilePicInput');
+    const profilePic = document.getElementById('profilePic');
+    const profileInitial = document.getElementById('profileInitial');
+    const profilePicLoader = document.getElementById('profilePicLoader');
+    const profileUsername = document.getElementById('profileUsername');
+    const profileProfession = document.getElementById('profileProfession'); // New
+    const profileBio = document.getElementById('profileBio');             // New
+    const kooCountSpan = document.getElementById('kooCount');
+    const followersCountSpan = document.getElementById('followersCount');
+    const followingCountSpan = document.getElementById('followingCount');
+    const myKoosFeed = document.getElementById('myKoosFeed');
+    const loadingMyKoos = document.getElementById('loadingMyKoos');
+    const noMyKoos = document.getElementById('noMyKoos');
+    const headerOptionsMenu = document.getElementById('headerOptionsMenu');
+    
+    // Edit Profile Modal Elements (New)
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const editProfileModal = document.getElementById('editProfileModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const editProfessionInput = document.getElementById('editProfession');
+    const editBioTextarea = document.getElementById('editBio');
+
+    let currentLoggedInUserId = null;
+
+    // --- Utility Functions (Copied/Adapted from home.html for consistency) ---
+
+    function formatTimestamp(timestamp) {
+      if (!timestamp) return '';
+      const date = timestamp.toDate();
+      const now = new Date();
+      const diff = now.getTime() - date.getTime();
+
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      if (seconds < 60) return `${seconds}s ago`;
+      if (minutes < 60) return `${minutes}m ago`;
+      if (hours < 24) return `${hours}h ago`;
+      if (days < 7) return `${days}d ago`;
+      
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    async function getUserProfile(userId) {
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                return { id: userDoc.id, ...userDoc.data() };
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+            return null;
+        }
+    }
+    
+    // --- Header Menu Logic ---
+    function toggleHeaderOptions(button) {
+        // Close other open menus if any (e.g., koo options menu)
+        document.querySelectorAll('.options-menu.active').forEach(openMenu => {
+            if (openMenu.id !== 'headerOptionsMenu') {
+                openMenu.classList.remove('active');
+            }
+        });
+
+        headerOptionsMenu.classList.toggle('active');
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function closeMenu(event) {
+            if (!headerOptionsMenu.contains(event.target) && !button.contains(event.target)) {
+                headerOptionsMenu.classList.remove('active');
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }
+
+    function logout() {
+      auth.signOut().then(() => {
+        alert("Logged out successfully!");
+        window.location.href = "index.html"; // Redirect to login page
+      }).catch((error) => {
+        console.error("Error logging out:", error);
+        alert("Failed to log out. Please try again.");
+      });
+    }
+
+    function navigateToPage(pageUrl) {
+        headerOptionsMenu.classList.remove('active'); // Close menu
+        window.location.href = pageUrl;
+    }
+
+    // --- Profile Picture Update Logic ---
+
+    // Trigger file input when container is clicked
+    profilePicContainer.addEventListener('click', () => {
+      profilePicInput.click();
+    });
+
+    profilePicInput.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!currentLoggedInUserId) {
+          alert("Please log in to update your profile picture.");
+          return;
+      }
+
+      profilePicLoader.style.display = 'block'; // Show loader
+      profilePic.style.display = 'none'; // Hide image
+      profileInitial.style.display = 'none'; // Hide initial
+
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const imageUrl = data.data.url;
+          console.log("Uploaded to imgBB:", imageUrl);
+          
+          // Update user's profilePicUrl in Firestore
+          await db.collection('users').doc(currentLoggedInUserId).update({
+            profilePicUrl: imageUrl
+          });
+
+          alert("Profile picture updated successfully!");
+          loadUserProfile(currentLoggedInUserId); // Reload profile to show new picture
+        } else {
+          console.error("ImgBB upload error:", data);
+          alert("Failed to upload image to imgBB: " + (data.error && data.error.message ? data.error.message : "Unknown error."));
+        }
+      } catch (error) {
+        console.error("Error uploading profile picture:", error);
+        alert("An error occurred while uploading your profile picture.");
+      } finally {
+        profilePicLoader.style.display = 'none'; // Hide loader
+      }
+    });
+
+    // --- Edit Profile (Bio & Profession) Modal Logic ---
+
+    function openEditProfileModal() {
+        editProfileModal.style.display = 'block';
+        // Populate modal fields with current profile data
+        editProfessionInput.value = profileProfession.textContent === 'No profession set' ? '' : profileProfession.textContent;
+        editBioTextarea.value = profileBio.textContent === 'No bio set' ? '' : profileBio.textContent;
+    }
+
+    function closeEditProfileModal() {
+        editProfileModal.style.display = 'none';
+    }
+
+    editProfileBtn.addEventListener('click', openEditProfileModal);
+    closeModalBtn.addEventListener('click', closeEditProfileModal);
+    cancelEditBtn.addEventListener('click', closeEditProfileModal);
+
+    // Close modal if user clicks outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target == editProfileModal) {
+            closeEditProfileModal();
+        }
+    });
+
+    saveProfileBtn.addEventListener('click', async () => {
+        const newProfession = editProfessionInput.value.trim();
+        const newBio = editBioTextarea.value.trim();
+
+        if (!currentLoggedInUserId) {
+            alert("Please log in to save your profile changes.");
+            return;
+        }
+
+        try {
+            await db.collection('users').doc(currentLoggedInUserId).update({
+                profession: newProfession,
+                bio: newBio
+            });
+            alert("Profile updated successfully!");
+            closeEditProfileModal();
+            loadUserProfile(currentLoggedInUserId); // Reload profile to reflect changes
+        } catch (error) {
+            console.error("Error saving profile:", error);
+            alert("Failed to save profile changes. Please try again.");
+        }
+    });
+
+
+    // --- Load User Profile Data ---
+    async function loadUserProfile(userId) {
+      if (!userId) {
+        profileUsername.textContent = "Not logged in";
+        profileProfession.style.display = 'none';
+        profileBio.style.display = 'none';
+        kooCountSpan.textContent = "0";
+        followersCountSpan.textContent = "0";
+        followingCountSpan.textContent = "0";
+        return;
+      }
+
+      try {
+        const userProfile = await getUserProfile(userId);
+        if (userProfile) {
+          profileUsername.textContent = `@${userProfile.displayName || userProfile.email.split('@')[0]}`;
+          followersCountSpan.textContent = userProfile.followers ? userProfile.followers.length : 0;
+          followingCountSpan.textContent = userProfile.following ? userProfile.following.length : 0;
+
+          // Display profession
+          if (userProfile.profession) {
+              profileProfession.textContent = userProfile.profession;
+              profileProfession.style.display = 'block';
+          } else {
+              profileProfession.textContent = 'No profession set'; // Placeholder text
+              profileProfession.style.display = 'block';
+              profileProfession.style.fontStyle = 'italic';
+              profileProfession.style.color = '#999';
+          }
+
+          // Display bio
+          if (userProfile.bio) {
+              profileBio.textContent = userProfile.bio;
+              profileBio.style.display = 'block';
+          } else {
+              profileBio.textContent = 'No bio set'; // Placeholder text
+              profileBio.style.display = 'block';
+              profileBio.style.fontStyle = 'italic';
+              profileBio.style.color = '#999';
+          }
+
+          // Display profile picture or initial
+          if (userProfile.profilePicUrl) {
+            profilePic.src = userProfile.profilePicUrl;
+            profilePic.style.display = 'block';
+            profileInitial.style.display = 'none';
+          } else {
+            profilePic.style.display = 'none';
+            profileInitial.textContent = (userProfile.displayName || userProfile.email.charAt(0)).charAt(0).toUpperCase();
+            profileInitial.style.display = 'flex'; // Ensure initial is centered
+          }
+
+          // Fetch Koo count
+          const myKoosSnapshot = await db.collection('koos').where('userId', '==', userId).get();
+          kooCountSpan.textContent = myKoosSnapshot.size;
+
+          renderMyKoos(myKoosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+        } else {
+          profileUsername.textContent = "Profile Not Found";
+          profileProfession.style.display = 'none';
+          profileBio.style.display = 'none';
+          kooCountSpan.textContent = "0";
+          followersCountSpan.textContent = "0";
+          followingCountSpan.textContent = "0";
+          profilePic.style.display = 'none';
+          profileInitial.textContent = '?';
+          profileInitial.style.display = 'flex';
+        }
+      } catch (error) {
+        console.error("Error loading user profile:", error);
+        profileUsername.textContent = "Error loading profile";
+      }
+    }
+
+    // --- Render My Koos ---
+    async function renderMyKoos(myKoos) {
+      myKoosFeed.innerHTML = ''; // Clear previous posts
+      loadingMyKoos.style.display = 'none';
+      noMyKoos.style.display = 'none';
+
+      if (myKoos.length === 0) {
+        noMyKoos.style.display = 'block';
+        return;
+      }
+
+      // Sort Koos by timestamp (latest first)
+      myKoos.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+
+      for (const koo of myKoos) {
+        const userProfile = await getUserProfile(koo.userId); // This should be current user's profile
+        const profilePicUrl = userProfile && userProfile.profilePicUrl ? userProfile.profilePicUrl : null;
+        const displayUsername = userProfile && userProfile.displayName ? userProfile.displayName : (koo.username || 'Anonymous');
+        const firstLetter = displayUsername.charAt(0).toUpperCase();
+
+        const hasLiked = koo.likes && koo.likes.includes(currentLoggedInUserId);
+        const rekooCount = koo.rekoos ? koo.rekoos.length : 0;
+        const likeCount = koo.likes ? koo.likes.length : 0;
+
+        const kooCard = document.createElement('div');
+        kooCard.className = 'koo-card';
+        kooCard.id = `koo-${koo.id}`;
+
+        kooCard.innerHTML = `
+          <div class="koo-header">
+            ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${firstLetter}</div>`}
+            <span class="username-koo">${displayUsername}</span>
+            <span class="koo-timestamp">${formatTimestamp(koo.timestamp)}</span>
+            <div class="post-options-container">
+                <button class="options-btn" onclick="togglePostOptions(this, '${koo.id}')"><i class="fas fa-ellipsis-h"></i></button>
+                <div class="options-menu" id="options-menu-${koo.id}">
+                    <button onclick="editPost('${koo.id}')">Edit Post</button>
+                    <button onclick="deletePost('${koo.id}')">Delete Post</button>
+                </div>
+            </div>
+          </div>
+          <p class="koo-text">${koo.text}</p>
+          ${koo.imageUrl ? `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">` : ''}
+          <div class="koo-actions">
+            <button class="koo-action-btn ${hasLiked ? 'liked' : ''}" onclick="toggleLike('${koo.id}')">
+              <i class="${hasLiked ? 'fas' : 'far'} fa-heart"></i> <span id="like-count-${koo.id}">${likeCount}</span>
+            </button>
+            <button class="koo-action-btn" onclick="openComments('${koo.id}')">
+              <i class="far fa-comment"></i> Comment
+            </button>
+            <button class="koo-action-btn" onclick="rekooPost('${koo.id}')">
+              <i class="fas fa-retweet"></i> <span id="rekoo-count-${koo.id}">${rekooCount > 0 ? rekooCount : ''}</span>
+            </button>
+          </div>
+        `;
+        myKoosFeed.appendChild(kooCard);
+      }
+    }
+    
+    // --- Post Action Functions (from home.html, adapted for profile.html) ---
+
+    function togglePostOptions(button, kooId) {
+        const menu = document.getElementById(`options-menu-${kooId}`);
+        // Close other open menus if any (e.g., header options menu)
+        document.querySelectorAll('.options-menu.active').forEach(openMenu => {
+            if (openMenu.id !== `options-menu-${kooId}`) {
+                openMenu.classList.remove('active');
+            }
+        });
+        menu.classList.toggle('active');
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function closeMenu(event) {
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.classList.remove('active');
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }
+
+    function editPost(kooId) {
+        alert(`Edit post with ID: ${kooId}`);
+        document.getElementById(`options-menu-${kooId}`).classList.remove('active');
+        // Implement actual edit functionality (e.g., redirect to edit page, or show modal)
+    }
+
+    async function deletePost(kooId) {
+        if (confirm("Are you sure you want to delete this Koo?")) {
+            try {
+                await db.collection("koos").doc(kooId).delete();
+                alert("Koo deleted successfully!");
+                document.getElementById(`koo-${kooId}`).remove(); // Remove from UI
+                // Re-calculate and update Koo count
+                const myKoosSnapshot = await db.collection('koos').where('userId', '==', currentLoggedInUserId).get();
+                kooCountSpan.textContent = myKoosSnapshot.size;
+                if (myKoosSnapshot.size === 0) {
+                    noMyKoos.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("Error deleting Koo:", error);
+                alert("Failed to delete Koo. Please try again.");
+            }
+        }
+        document.getElementById(`options-menu-${kooId}`).classList.remove('active');
+    }
+
+    async function toggleLike(kooId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to like posts.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        const kooRef = db.collection('koos').doc(kooId);
+        try {
+            const doc = await kooRef.get();
+            if (!doc.exists) return;
+
+            const kooData = doc.data();
+            let likes = kooData.likes || [];
+            const hasLiked = likes.includes(currentLoggedInUserId);
+
+            if (hasLiked) {
+                likes = likes.filter(uid => uid !== currentLoggedInUserId);
+            } else {
+                likes.push(currentLoggedInUserId);
+            }
+
+            await kooRef.update({ likes: likes });
+
+            const likeButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(1)`);
+            const likeIcon = likeButton.querySelector('i');
+            const likeCountSpan = document.getElementById(`like-count-${kooId}`);
+
+            if (hasLiked) {
+                likeIcon.classList.remove('fas', 'liked');
+                likeIcon.classList.add('far');
+            } else {
+                likeIcon.classList.remove('far');
+                likeIcon.classList.add('fas', 'liked');
+            }
+            likeCountSpan.textContent = likes.length;
+
+        } catch (error) {
+            console.error("Error toggling like:", error);
+            alert("Failed to update like status. Please try again.");
+        }
+    }
+
+    function openComments(kooId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to view comments.");
+            window.location.href = "index.html";
+            return;
+        }
+        window.location.href = `comments.html?kooId=${kooId}`;
+    }
+
+    async function rekooPost(kooId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to rekoo posts.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        const kooRef = db.collection('koos').doc(kooId);
+        try {
+            const doc = await kooRef.get();
+            if (!doc.exists) return;
+
+            const kooData = doc.data();
+            let rekoos = kooData.rekoos || [];
+            const hasRekooed = rekoos.includes(currentLoggedInUserId);
+
+            if (hasRekooed) {
+                alert("You've already rekooed this post. To simplify, we won't un-rekoo.");
+                return; 
+            } else {
+                rekoos.push(currentLoggedInUserId);
+            }
+
+            await kooRef.update({ rekoos: rekoos });
+
+            const rekooButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(3)`);
+            const rekooCountSpan = document.getElementById(`rekoo-count-${kooId}`);
+
+            rekooButton.classList.add('rekooed');
+            rekooCountSpan.textContent = rekoos.length > 0 ? rekoos.length : '';
+            alert("Koo rekooed!");
+
+        } catch (error) {
+            console.error("Error rekooing post:", error);
+            alert("Failed to rekoo post. Please try again.");
+        }
+    }
+
+
+    // --- Initialization ---
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        alert("You are not logged in. Redirecting...");
+        window.location.href = "index.html";
+      } else {
+        currentLoggedInUserId = user.uid;
+        loadUserProfile(currentLoggedInUserId);
+      }
+    });
+
+    // Footer Navigation
+    document.querySelector('.footer .fa-home').onclick = () => window.location.href='home.html';
+    document.querySelector('.footer .fa-hashtag').onclick = () => window.location.href='trending.html';
+    document.querySelector('.footer .fa-search').onclick = () => window.location.href='search.html';
+    document.querySelector('.footer .fa-user-circle').onclick = () => window.location.href='profile.html';
+  </script>
+
+</body>
+</html>

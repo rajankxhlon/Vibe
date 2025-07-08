@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Koo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fffbe6;
+      padding-bottom: 60px; /* space for footer */
+      position: relative; /* Needed for modal positioning */
+    }
+
+    .header {
+      background-color: #ffcc00;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .header i {
+      font-size: 24px;
+      color: #000;
+      cursor: pointer;
+      margin-right: 15px;
+    }
+
+    .header h2 {
+      margin: 0;
+      color: #000;
+      font-size: 20px;
+    }
+
+    .koo-form-container {
+      padding: 20px;
+    }
+
+    .textarea-wrapper {
+        position: relative;
+        margin-bottom: 10px;
+    }
+
+    textarea {
+      width: calc(100% - 20px);
+      min-height: 120px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 16px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    .action-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .left-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .image-upload-wrapper, .hashtag-button-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      background-color: #f0f0f0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .image-upload-wrapper:hover, .hashtag-button-wrapper:hover {
+      background-color: #e0e0e0;
+    }
+
+    .image-upload-wrapper input[type="file"] {
+      display: none;
+    }
+
+    .image-upload-wrapper i, .hashtag-button-wrapper i {
+      font-size: 18px;
+      color: #ffcc00;
+      margin-right: 8px;
+    }
+
+    .image-preview {
+      max-width: 100%;
+      max-height: 150px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .clear-image-btn {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .post-button {
+      padding: 8px 18px;
+      background: #ffcc00;
+      color: #000;
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .post-button:hover {
+      background: #ffdb4d;
+    }
+
+    /* Modern Hashtag Modal Styling */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1000; /* High z-index to be on top of everything */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      background-color: rgba(0,0,0,0.6); /* Darker overlay */
+      display: flex; /* Use flex to center content */
+      justify-content: center;
+      align-items: center;
+      opacity: 0; /* Start hidden for animation */
+      transition: opacity 0.3s ease-out; /* Smooth fade-in */
+      pointer-events: none; /* Allow clicks through when invisible */
+    }
+
+    .modal.show {
+        opacity: 1;
+        pointer-events: auto; /* Enable clicks when visible */
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      padding: 20px;
+      border-radius: 12px; /* More rounded corners */
+      width: 90%; /* Responsive width */
+      max-width: 350px; /* Max width for larger screens */
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3); /* Deeper shadow */
+      transform: translateY(20px); /* Start slightly below for animation */
+      transition: transform 0.3s ease-out; /* Smooth slide-up */
+      box-sizing: border-box; /* Include padding in width */
+    }
+
+    .modal.show .modal-content {
+        transform: translateY(0); /* Slide up to final position */
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 12px;
+        margin-bottom: 15px;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 19px;
+        color: #222;
+        font-weight: 600;
+    }
+
+    .close-button {
+      color: #888;
+      font-size: 24px;
+      font-weight: normal;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+    }
+
+    .close-button:hover {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    .hashtag-input-group {
+        display: flex;
+        margin-bottom: 20px;
+        /* Ensure it takes full width of its parent minus padding */
+        width: 100%;
+        box-sizing: border-box; /* Crucial for proper width calculation */
+    }
+
+    .hashtag-input-group input {
+        flex-grow: 1; /* Allow input to grow and take available space */
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px 0 0 6px;
+        font-size: 15px;
+        outline: none;
+        /* Ensure its width is managed by flex-grow, not a fixed value */
+        min-width: 0; /* Prevents overflow from long placeholder text */
+    }
+
+    .hashtag-input-group input:focus {
+        border-color: #ffcc00;
+        box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.2);
+    }
+
+    .hashtag-input-group button {
+        /* Keep button styles as is, flex will handle sizing */
+        padding: 10px 18px;
+        background-color: #ffcc00;
+        border: none;
+        border-radius: 0 6px 6px 0;
+        cursor: pointer;
+        font-weight: bold;
+        color: #000;
+        font-size: 15px;
+        /* Ensure button shrinks appropriately if needed */
+        flex-shrink: 0;
+    }
+
+    .hashtag-input-group button:hover {
+        background-color: #ffdb4d;
+    }
+
+    .trending-hashtags h4 {
+        margin-top: 0;
+        margin-bottom: 12px;
+        color: #666;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .hashtag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        max-height: 120px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .hashtag-tag {
+        background-color: #e0e0e0;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        cursor: pointer;
+        color: #333;
+        transition: background-color 0.2s ease;
+    }
+
+    .hashtag-tag:hover {
+        background-color: #d8d8d8;
+    }
+
+
+    /* Footer (reused from home.html) */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 60px;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    }
+
+    .footer i {
+      font-size: 22px;
+      color: #000;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <i class="fas fa-arrow-left" onclick="window.history.back()"></i>
+    <h2>Create Koo</h2>
+  </div>
+
+  <div class="koo-form-container">
+    <div class="textarea-wrapper">
+      <textarea id="kooText" placeholder="What's on your mind?"></textarea>
+    </div>
+
+    <div class="action-row">
+      <div class="left-actions">
+          <label for="imageUpload" class="image-upload-wrapper">
+            <i class="fas fa-camera"></i>
+            <span>Add Image</span>
+            <input type="file" id="imageUpload" accept="image/*">
+          </label>
+          <button class="hashtag-button-wrapper" onclick="openHashtagModal()">
+              <i class="fas fa-hashtag"></i>
+              <span>Hashtag</span>
+          </button>
+      </div>
+      <button class="post-button" onclick="postKoo()">Post</button>
+    </div>
+
+    <div style="position: relative; width: fit-content; margin-top: 10px;">
+        <img id="imagePreview" class="image-preview" src="#" alt="Image Preview">
+        <button type="button" id="clearImageBtn" class="clear-image-btn"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <div id="hashtagModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Hashtag</h3>
+            <span class="close-button" onclick="closeHashtagModal()">&times;</span>
+        </div>
+
+        <div class="hashtag-input-group">
+            <input type="text" id="customHashtagInput" placeholder="Create new hashtag (e.g., mykoo)">
+            <button onclick="addCustomHashtag()">Add</button>
+        </div>
+
+        <div class="trending-hashtags">
+            <h4>Popular Hashtags</h4>
+            <div id="popularHashtagList" class="hashtag-list">
+                <span class="hashtag-tag" onclick="selectHashtag(this)">#DailyThoughts</span>
+                <span class="hashtag-tag" onclick="selectHashtag(this)">#GoodVibes</span>
+                <span class="hashtag-tag" onclick="selectHashtag(this)">#TechNews</span>
+                <span class="hashtag-tag" onclick="selectHashtag(this)">#Motivation</span>
+                <span class="hashtag-tag" onclick="selectHashtag(this)">#India</span>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <i class="fas fa-home" title="Home" onclick="window.location.href='home.html'"></i>
+    <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
+    <i class="fas fa-search" title="Search" onclick="window.location.href='search.html'"></i>
+    <i class="fas fa-user-circle" title="Profile" onclick="window.location.href='profile.html'"></i>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase Config (use the same config as home.html)
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+      authDomain: "petpal-15621.firebaseapp.com",
+      projectId: "petpal-15621",
+      storageBucket: "petpal-15621.appspot.com",
+      messagingSenderId: "YOUR_ID",
+      appId: "YOUR_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore(); // Initialize Firestore
+
+    // ImgBB API Key - REPLACE THIS WITH YOUR ACTUAL KEY
+    const IMGBB_API_KEY = "0ba537e52261b0060dd1bc0b926212b4"; // <<< REMEMBER TO REPLACE THIS!
+
+    const kooTextarea = document.getElementById('kooText');
+    const imageUploadInput = document.getElementById('imageUpload');
+    const imagePreview = document.getElementById('imagePreview');
+    const clearImageBtn = document.getElementById('clearImageBtn');
+    let uploadedImageUrl = null;
+
+    const hashtagModal = document.getElementById('hashtagModal');
+    const customHashtagInput = document.getElementById('customHashtagInput');
+    const popularHashtagList = document.getElementById('popularHashtagList');
+
+    // --- Image Upload & Preview Logic (Unchanged) ---
+    imageUploadInput.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          imagePreview.src = e.target.result;
+          imagePreview.style.display = 'block';
+          clearImageBtn.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        imagePreview.style.display = 'none';
+        imagePreview.src = '#';
+        clearImageBtn.style.display = 'none';
+        uploadedImageUrl = null;
+      }
+    });
+
+    clearImageBtn.addEventListener('click', function() {
+      imageUploadInput.value = '';
+      imagePreview.style.display = 'none';
+      imagePreview.src = '#';
+      clearImageBtn.style.display = 'none';
+      uploadedImageUrl = null;
+    });
+
+    async function uploadImageToImgBB(file) {
+      if (!file) return null;
+      const formData = new FormData();
+      formData.append('image', file);
+      try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+          return data.data.url;
+        } else {
+          console.error("ImgBB upload failed:", data.error.message);
+          alert("Image upload failed: " + data.error.message);
+          return null;
+        }
+      } catch (error) {
+        console.error("Error uploading image to ImgBB:", error);
+        alert("Error uploading image. Please try again.");
+        return null;
+      }
+    }
+
+    // --- Hashtag Modal Logic (Updated for animations) ---
+
+    function openHashtagModal() {
+        hashtagModal.style.display = 'flex';
+        setTimeout(() => hashtagModal.classList.add('show'), 10);
+    }
+
+    function closeHashtagModal() {
+        hashtagModal.classList.remove('show');
+        hashtagModal.addEventListener('transitionend', function handler() {
+            hashtagModal.style.display = 'none';
+            hashtagModal.removeEventListener('transitionend', handler);
+        });
+        customHashtagInput.value = '';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == hashtagModal) {
+            closeHashtagModal();
+        }
+    }
+
+    function addCustomHashtag() {
+        let hashtag = customHashtagInput.value.trim();
+        if (hashtag) {
+            if (!hashtag.startsWith('#')) {
+                hashtag = '#' + hashtag;
+            }
+            hashtag = hashtag.replace(/#+/g, '#');
+
+            kooTextarea.value += ' ' + hashtag + ' ';
+            closeHashtagModal();
+        }
+    }
+
+    function selectHashtag(element) {
+        const hashtag = element.textContent;
+        kooTextarea.value += ' ' + hashtag + ' ';
+        closeHashtagModal();
+    }
+
+    // --- Post Koo Logic (Unchanged, with hashtag integration) ---
+    async function postKoo() {
+      const kooText = kooTextarea.value.trim();
+      const imageFile = imageUploadInput.files[0];
+      let imageUrl = null;
+
+      if (!kooText && !imageFile) {
+        alert("Please enter some text or select an image to post.");
+        return;
+      }
+
+      if (imageFile) {
+        imageUrl = await uploadImageToImgBB(imageFile);
+        if (!imageUrl) {
+          return;
+        }
+      }
+
+      const user = auth.currentUser;
+      if (!user) {
+        alert("You must be logged in to post a Koo.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const hashtags = (kooText.match(/#(\w+)/g) || []).map(tag => tag.toLowerCase());
+
+
+      const newKoo = {
+        userId: user.uid,
+        username: user.displayName || user.email,
+        text: kooText,
+        imageUrl: imageUrl,
+        hashtags: hashtags,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        await db.collection("koos").add(newKoo);
+        alert("Koo posted successfully!");
+        kooTextarea.value = '';
+        imageUploadInput.value = '';
+        imagePreview.style.display = 'none';
+        imagePreview.src = '#';
+        clearImageBtn.style.display = 'none';
+        uploadedImageUrl = null;
+      } catch (error) {
+        console.error("Error posting Koo:", error);
+        alert("Failed to post Koo. Please try again.");
+      }
+    }
+
+    // --- Firebase Auth State Listener (Unchanged) ---
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        alert("You are not logged in. Redirecting...");
+        window.location.href = "index.html";
+      }
+    });
+
+    // --- Footer Navigation (Unchanged) ---
+    document.querySelector('.footer .fa-home').onclick = () => window.location.href='home.html';
+    document.querySelector('.footer .fa-hashtag').onclick = () => window.location.href='trending.html';
+    document.querySelector('.footer .fa-search').onclick = () => window.location.href='search.html';
+    document.querySelector('.footer .fa-user-circle').onclick = () => window.location.href='profile.html';
+
+  </script>
+</body>
+</html>
