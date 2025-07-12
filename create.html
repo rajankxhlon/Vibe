@@ -132,10 +132,39 @@
       font-size: 16px;
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex; /* For spinner alignment */
+      align-items: center;
+      justify-content: center;
+      gap: 5px; /* Space between text and spinner */
     }
 
     .post-button:hover {
       background: #ffdb4d;
+    }
+
+    .post-button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    /* Spinner animation */
+    .post-button .spinner {
+        display: none;
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-top: 3px solid #000;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        animation: spin 1s linear infinite;
+    }
+
+    .post-button[data-state="uploading"] .spinner {
+        display: block;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     /* Modern Hashtag Modal Styling */
@@ -249,7 +278,11 @@
         background-color: #ffdb4d;
     }
 
-    .trending-hashtags h4 {
+    .trending-hashtags, .user-created-hashtags { /* Renamed class here */
+        margin-bottom: 20px;
+    }
+
+    .trending-hashtags h4, .user-created-hashtags h4 { /* Renamed class here */
         margin-top: 0;
         margin-bottom: 12px;
         color: #666;
@@ -274,10 +307,23 @@
         cursor: pointer;
         color: #333;
         transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 
     .hashtag-tag:hover {
         background-color: #d8d8d8;
+    }
+
+    .hashtag-count {
+        font-size: 12px;
+        color: #666;
+        background-color: #ccc;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 15px; /* Ensure a minimum width */
+        text-align: center;
     }
 
 
@@ -326,7 +372,10 @@
               <span>Hashtag</span>
           </button>
       </div>
-      <button class="post-button" onclick="postKoo()">Post</button>
+      <button class="post-button" id="postButton" onclick="postKoo()" data-state="post">
+          <span>Post</span>
+          <div class="spinner"></div>
+      </button>
     </div>
 
     <div style="position: relative; width: fit-content; margin-top: 10px;">
@@ -350,12 +399,12 @@
         <div class="trending-hashtags">
             <h4>Popular Hashtags</h4>
             <div id="popularHashtagList" class="hashtag-list">
-                <span class="hashtag-tag" onclick="selectHashtag(this)">#DailyThoughts</span>
-                <span class="hashtag-tag" onclick="selectHashtag(this)">#GoodVibes</span>
-                <span class="hashtag-tag" onclick="selectHashtag(this)">#TechNews</span>
-                <span class="hashtag-tag" onclick="selectHashtag(this)">#Motivation</span>
-                <span class="hashtag-tag" onclick="selectHashtag(this)">#India</span>
-            </div>
+                </div>
+        </div>
+
+        <div class="user-created-hashtags"> <h4>All User Hashtags</h4>
+            <div id="userHashtagList" class="hashtag-list">
+                </div>
         </div>
     </div>
   </div>
@@ -392,13 +441,19 @@
     const imageUploadInput = document.getElementById('imageUpload');
     const imagePreview = document.getElementById('imagePreview');
     const clearImageBtn = document.getElementById('clearImageBtn');
+    const postButton = document.getElementById('postButton'); // Get the post button
     let uploadedImageUrl = null;
 
     const hashtagModal = document.getElementById('hashtagModal');
     const customHashtagInput = document.getElementById('customHashtagInput');
     const popularHashtagList = document.getElementById('popularHashtagList');
+    const userHashtagList = document.getElementById('userHashtagList'); // This will now show ALL user-created hashtags
 
-    // --- Image Upload & Preview Logic (Unchanged) ---
+    const defaultPopularHashtags = [
+        "#DailyThoughts", "#GoodVibes", "#TechNews", "#Motivation", "#India"
+    ];
+
+    // --- Image Upload & Preview Logic ---
     imageUploadInput.addEventListener('change', function(event) {
       const file = event.target.files[0];
       if (file) {
@@ -407,6 +462,7 @@
           imagePreview.src = e.target.result;
           imagePreview.style.display = 'block';
           clearImageBtn.style.display = 'flex';
+          updatePostButtonState();
         };
         reader.readAsDataURL(file);
       } else {
@@ -414,6 +470,7 @@
         imagePreview.src = '#';
         clearImageBtn.style.display = 'none';
         uploadedImageUrl = null;
+        updatePostButtonState();
       }
     });
 
@@ -423,10 +480,27 @@
       imagePreview.src = '#';
       clearImageBtn.style.display = 'none';
       uploadedImageUrl = null;
+      updatePostButtonState();
     });
+
+    kooTextarea.addEventListener('input', updatePostButtonState);
+
+    function updatePostButtonState() {
+        const kooText = kooTextarea.value.trim();
+        const imageFile = imageUploadInput.files[0];
+
+        if (kooText || imageFile) {
+            postButton.removeAttribute('disabled');
+        } else {
+            postButton.setAttribute('disabled', 'true');
+        }
+    }
 
     async function uploadImageToImgBB(file) {
       if (!file) return null;
+
+      setPostButtonState('uploading');
+
       const formData = new FormData();
       formData.append('image', file);
       try {
@@ -446,14 +520,29 @@
         console.error("Error uploading image to ImgBB:", error);
         alert("Error uploading image. Please try again.");
         return null;
+      } finally {
+        setPostButtonState('post'); // Revert to 'post' state after upload attempt
       }
     }
 
-    // --- Hashtag Modal Logic (Updated for animations) ---
+    function setPostButtonState(state) {
+        if (state === 'uploading') {
+            postButton.setAttribute('data-state', 'uploading');
+            postButton.querySelector('span').textContent = 'Uploading...';
+            postButton.setAttribute('disabled', 'true'); // Disable during upload
+        } else { // state === 'post'
+            postButton.setAttribute('data-state', 'post');
+            postButton.querySelector('span').textContent = 'Post';
+            updatePostButtonState(); // Re-evaluate if it should be enabled based on text/image
+        }
+    }
+
+    // --- Hashtag Modal Logic ---
 
     function openHashtagModal() {
         hashtagModal.style.display = 'flex';
         setTimeout(() => hashtagModal.classList.add('show'), 10);
+        loadHashtags(); // Load hashtags when modal opens
     }
 
     function closeHashtagModal() {
@@ -477,7 +566,7 @@
             if (!hashtag.startsWith('#')) {
                 hashtag = '#' + hashtag;
             }
-            hashtag = hashtag.replace(/#+/g, '#');
+            hashtag = hashtag.replace(/#+/g, '#'); // Ensure only one #
 
             kooTextarea.value += ' ' + hashtag + ' ';
             closeHashtagModal();
@@ -485,12 +574,74 @@
     }
 
     function selectHashtag(element) {
-        const hashtag = element.textContent;
+        const hashtag = element.dataset.hashtag; // Use data-hashtag attribute
         kooTextarea.value += ' ' + hashtag + ' ';
         closeHashtagModal();
     }
 
-    // --- Post Koo Logic (Unchanged, with hashtag integration) ---
+    async function loadHashtags() {
+        popularHashtagList.innerHTML = '';
+        userHashtagList.innerHTML = ''; // Clear the "All User Hashtags" list
+
+        // Display default popular hashtags
+        defaultPopularHashtags.forEach(tag => {
+            const span = document.createElement('span');
+            span.className = 'hashtag-tag';
+            span.textContent = tag;
+            span.dataset.hashtag = tag; // Store clean hashtag in dataset
+            span.onclick = () => selectHashtag(span);
+            popularHashtagList.appendChild(span);
+        });
+
+        // Fetch all hashtags from Koos and count them
+        try {
+            const snapshot = await db.collection("koos").get();
+            const hashtagCounts = {};
+
+            snapshot.forEach(doc => {
+                const koo = doc.data();
+                if (koo.hashtags && Array.isArray(koo.hashtags)) {
+                    koo.hashtags.forEach(tag => {
+                        const cleanTag = tag.startsWith('#') ? tag : '#' + tag; // Ensure it starts with #
+                        hashtagCounts[cleanTag] = (hashtagCounts[cleanTag] || 0) + 1;
+                    });
+                }
+            });
+
+            // Sort hashtags by count (descending)
+            const sortedHashtags = Object.entries(hashtagCounts).sort(([, countA], [, countB]) => countB - countA);
+
+            // Populate userHashtagList (now "All User Hashtags")
+            if (sortedHashtags.length > 0) {
+                sortedHashtags.forEach(([hashtag, count]) => {
+                    const span = document.createElement('span');
+                    span.className = 'hashtag-tag';
+                    span.dataset.hashtag = hashtag;
+                    span.onclick = () => selectHashtag(span);
+
+                    const hashtagText = document.createElement('span');
+                    hashtagText.textContent = hashtag;
+                    span.appendChild(hashtagText);
+
+                    const hashtagCountSpan = document.createElement('span');
+                    hashtagCountSpan.className = 'hashtag-count';
+                    hashtagCountSpan.textContent = count;
+                    span.appendChild(hashtagCountSpan);
+
+                    userHashtagList.appendChild(span);
+                });
+            } else {
+                userHashtagList.innerHTML = '<p style="color:#777; font-size: 14px;">No user-created hashtags yet. Be the first to use one!</p>';
+            }
+
+        } catch (error) {
+            console.error("Error loading hashtags:", error);
+            userHashtagList.innerHTML = '<p style="color:#777; font-size: 14px;">Error loading hashtags.</p>';
+        }
+    }
+
+
+    // --- Post Koo Logic ---
     async function postKoo() {
       const kooText = kooTextarea.value.trim();
       const imageFile = imageUploadInput.files[0];
@@ -501,13 +652,6 @@
         return;
       }
 
-      if (imageFile) {
-        imageUrl = await uploadImageToImgBB(imageFile);
-        if (!imageUrl) {
-          return;
-        }
-      }
-
       const user = auth.currentUser;
       if (!user) {
         alert("You must be logged in to post a Koo.");
@@ -515,15 +659,26 @@
         return;
       }
 
-      const hashtags = (kooText.match(/#(\w+)/g) || []).map(tag => tag.toLowerCase());
+      setPostButtonState('uploading'); // Set button to uploading state
 
+      if (imageFile) {
+        imageUrl = await uploadImageToImgBB(imageFile);
+        if (!imageUrl) {
+          setPostButtonState('post'); // Revert state if image upload fails
+          return;
+        }
+      }
+
+      // Extract hashtags, ensuring they are lowercase and unique
+      const rawHashtags = (kooText.match(/#(\w+)/g) || []).map(tag => tag.toLowerCase().replace(/^#/, '')); // Remove '#' for storage if desired, but keep it for display
+      const uniqueHashtags = [...new Set(rawHashtags)].map(tag => '#' + tag); // Re-add '#' for consistency
 
       const newKoo = {
         userId: user.uid,
         username: user.displayName || user.email,
         text: kooText,
         imageUrl: imageUrl,
-        hashtags: hashtags,
+        hashtags: uniqueHashtags, // Store processed hashtags
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
 
@@ -536,26 +691,33 @@
         imagePreview.src = '#';
         clearImageBtn.style.display = 'none';
         uploadedImageUrl = null;
+        updatePostButtonState(); // Re-evaluate post button state after clearing form
       } catch (error) {
         console.error("Error posting Koo:", error);
         alert("Failed to post Koo. Please try again.");
+      } finally {
+        setPostButtonState('post'); // Always revert button state
       }
     }
 
-    // --- Firebase Auth State Listener (Unchanged) ---
+    // --- Firebase Auth State Listener ---
     auth.onAuthStateChanged(user => {
       if (!user) {
         alert("You are not logged in. Redirecting...");
         window.location.href = "index.html";
+      } else {
+          updatePostButtonState(); // Initial check for button state on load
       }
     });
 
-    // --- Footer Navigation (Unchanged) ---
+    // --- Footer Navigation ---
     document.querySelector('.footer .fa-home').onclick = () => window.location.href='home.html';
     document.querySelector('.footer .fa-hashtag').onclick = () => window.location.href='trending.html';
     document.querySelector('.footer .fa-search').onclick = () => window.location.href='search.html';
     document.querySelector('.footer .fa-user-circle').onclick = () => window.location.href='profile.html';
 
+    // Initial call to set the button state
+    document.addEventListener('DOMContentLoaded', updatePostButtonState);
   </script>
 </body>
 </html>
