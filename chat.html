@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Koo | Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Prevent body scroll, content will scroll */
+        }
+
+        /* --- Header Styles --- */
+        .header {
+            background-color: #ffcc00;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header .back-btn {
+            font-size: 24px;
+            color: #000;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        .header .profile-pic, .header .profile-initial {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            margin-right: 10px;
+            flex-shrink: 0; /* Prevents shrinking */
+        }
+        .header .profile-initial {
+            background-color: #ccc; /* Default background for initials */
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .header .user-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden; /* Hide overflow text */
+            white-space: nowrap; /* Prevent wrapping */
+        }
+
+        .header .user-name {
+            margin: 0;
+            color: #000;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Ellipsis for long names */
+        }
+
+        .header .status-text {
+            font-size: 13px;
+            color: rgba(0,0,0,0.7);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* --- Chat Messages Container --- */
+        .chat-messages {
+            flex-grow: 1; /* Takes all available space */
+            padding: 15px;
+            overflow-y: auto; /* Enable scrolling for messages */
+            display: flex;
+            flex-direction: column;
+            gap: 8px; /* Space between messages */
+            scroll-behavior: smooth; /* Smooth scrolling to new messages */
+        }
+
+        /* --- Message Bubble Styles --- */
+        .message-bubble {
+            display: flex;
+            max-width: 80%; /* Messages take max 80% width */
+            align-items: flex-end; /* Align timestamp/seen indicator */
+        }
+
+        .message-bubble.sent {
+            align-self: flex-end; /* Align sent messages to the right */
+            flex-direction: row-reverse; /* Put content first, then status */
+        }
+
+        .message-bubble.received {
+            align-self: flex-start; /* Align received messages to the left */
+        }
+
+        .message-content {
+            padding: 10px 14px;
+            border-radius: 18px; /* Rounded corners */
+            word-wrap: break-word; /* Break long words */
+            font-size: 15px;
+            line-height: 1.4;
+            position: relative;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05); /* Subtle shadow */
+        }
+
+        /* --- Updated Message Bubble Colors --- */
+        .message-bubble.sent .message-content {
+            background-color: #FFEB3B; /* Yellow for sent messages */
+            color: #333;
+            border-bottom-right-radius: 2px; /* Pointy corner */
+        }
+
+        .message-bubble.received .message-content {
+            background-color: #E0E0E0; /* Grey for received messages */
+            color: #333;
+            border-bottom-left-radius: 2px; /* Pointy corner */
+        }
+
+        /* Message timestamp and seen indicator */
+        .message-status {
+            font-size: 10px;
+            color: #888;
+            margin: 0 4px; /* Space around timestamp */
+            display: flex;
+            align-items: center;
+            white-space: nowrap; /* Prevent wrapping */
+            flex-shrink: 0; /* Don't shrink */
+        }
+
+        .message-status .seen-icon {
+            margin-left: 3px;
+            color: #007bff; /* Blue for seen */
+        }
+        .message-status .seen-icon.double-tick {
+            color: #007bff; /* Blue for seen */
+            font-size: 11px; /* Slightly larger for double tick */
+        }
+        .message-status .seen-icon.single-tick {
+            color: #888; /* Grey for delivered */
+            font-size: 11px;
+        }
+        .message-status .seen-icon.pending {
+            color: #888; /* Grey for pending/sent */
+            font-size: 11px;
+        }
+
+
+        /* --- Message Input Area --- */
+        .message-input-container {
+            padding: 10px 15px;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            position: relative; /* For positioning the button inside */
+        }
+
+        .message-input-container input {
+            flex-grow: 1;
+            padding: 10px 50px 10px 15px; /* Ample right padding for the icon */
+            /* Removed margin-right: 10px; */ /* This was making it shorter */
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            background-color: #f9f9f9;
+            box-sizing: border-box; /* Include padding in width */
+            /* Added min-width to prevent squishing on very small screens */
+            min-width: 0;
+        }
+
+        .message-input-container button {
+            background-color: transparent; /* Make background transparent */
+            color: #ffcc00; /* Use primary color for icon */
+            border: none;
+            width: 45px; /* Size of the clickable area */
+            height: 45px;
+            font-size: 20px; /* Size of the icon */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            position: absolute; /* Position it absolutely */
+            /* Adjusted right position to bring it closer to the input's visual edge */
+            right: 15px; /* Start from the right edge of the container's padding */
+            top: 50%; /* Center vertically */
+            transform: translateY(-50%); /* Adjust for perfect vertical centering */
+            z-index: 2; /* Ensure it's above the input */
+            pointer-events: all; /* Ensure clicks are registered */
+        }
+
+        .message-input-container button:hover {
+            color: #e6b800; /* Darken icon on hover */
+        }
+
+        /* --- Verified Badge Styling --- */
+        .verified-badge {
+            width: 16px;
+            height: 16px;
+            margin-left: 4px;
+            flex-shrink: 0;
+        }
+        .header .verified-badge {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* --- Typing Indicator Dots --- */
+        .typing-indicator .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            margin: 0 1px;
+            animation: bounce 0.8s infinite ease-in-out;
+            opacity: 0; /* Start hidden */
+        }
+
+        .typing-indicator .dot:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .typing-indicator .dot:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: translateY(0);
+                opacity: 0;
+            }
+            40% {
+                transform: translateY(-4px);
+                opacity: 1;
+            }
+        }
+
+        /* No messages state */
+        .no-messages {
+            text-align: center;
+            color: #777;
+            padding: 20px;
+            font-size: 15px;
+        }
+
+        /* Media queries for responsiveness */
+        @media (max-width: 600px) {
+            .header {
+                padding: 8px 12px;
+            }
+            .header .profile-pic, .header .profile-initial {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+            .header .user-name {
+                font-size: 16px;
+            }
+            .header .status-text {
+                font-size: 12px;
+            }
+            .chat-messages {
+                padding: 10px;
+            }
+            .message-content {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+            .message-status {
+                font-size: 9px;
+            }
+            .message-input-container {
+                padding: 8px 12px;
+            }
+            .message-input-container input {
+                padding: 8px 45px 8px 12px; /* Adjusted right padding for smaller icon */
+                /* Removed margin-right here too */
+                font-size: 15px;
+            }
+            .message-input-container button {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+                right: 12px; /* Adjusted right position for smaller screen padding */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <i class="fas fa-arrow-left back-btn" onclick="window.history.back()"></i>
+        <div id="recipientProfile" style="display: flex; align-items: center;">
+            <div class="user-info">
+                <h1 class="user-name" id="recipientName">
+                    </h1>
+                <div class="status-text" id="statusText">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        <div class="no-messages" id="noMessages">Start your conversation!</div>
+    </div>
+
+    <div class="message-input-container">
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button id="sendMessageBtn" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script> <script>
+        // --- Firebase Configuration (REPLACE WITH YOUR ACTUAL CONFIG) ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+          authDomain: "petpal-15621.firebaseapp.com",
+          projectId: "petpal-15621",
+          storageBucket: "petpal-15621.firebaseastorage.app",
+          messagingSenderId: "251985816504",
+          appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
+          databaseURL: "https://petpal-15621-default-rtdb.firebaseio.com/" // IMPORTANT: Add your Realtime Database URL
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const rtdb = firebase.database(); // Initialize Realtime Database
+
+        // --- DOM Elements ---
+        const recipientProfileDiv = document.getElementById('recipientProfile');
+        let recipientNameElem = document.getElementById('recipientName'); // Use let as it's re-assigned
+        let statusTextElem = document.getElementById('statusText');     // Use let as it's re-assigned
+        const chatMessagesElem = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const noMessagesDiv = document.getElementById('noMessages');
+
+        // --- Chat Variables ---
+        let currentUserId = null;
+        let recipientId = null;
+        let chatId = null;
+        let recipientData = null; // Store recipient's profile data
+        let chatInitialized = false; // Flag to ensure chat setup runs once
+        let messageListenerUnsubscribe = null; // For unsubscribing from Firestore listener
+
+        // SVG for the verified badge
+        const verifiedBadgeSvg = `
+            <svg class="verified-badge" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+                <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                    <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                    <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+                </g>
+            </svg>
+        `;
+
+        // --- Utility Functions ---
+        function getQueryParams() {
+            const params = {};
+            const queryString = window.location.search.substring(1);
+            const regex = /([^&=]+)=([^&]*)/g;
+            let m;
+            while (m = regex.exec(queryString)) {
+                params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+            }
+            return params;
+        }
+
+        async function getUserProfile(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    return { id: userDoc.id, ...userDoc.data() };
+                }
+                return null;
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                return null;
+            }
+        }
+
+        function formatMessageTimestamp(timestamp) {
+            if (!timestamp) return '';
+            const date = timestamp.toDate();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+            if (messageDate.toDateString() === today.toDateString()) {
+                // Today: "HH:MM AM/PM"
+                return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            } else {
+                // Other days: "MMM DD, HH:MM AM/PM"
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ", " +
+                       date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            }
+        }
+
+        function generateProfileHtml(user) {
+            const profilePicUrl = user.profilePicUrl || null;
+            const displayUsername = user.displayName || user.email.split('@')[0];
+            const firstLetter = displayUsername.charAt(0).toUpperCase();
+
+            let profileHtml = '';
+            if (profilePicUrl) {
+                profileHtml += `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">`;
+            } else {
+                profileHtml += `<div class="profile-initial">${firstLetter}</div>`;
+            }
+
+            return profileHtml;
+        }
+
+        function updateRecipientHeader() {
+            if (!recipientData) return;
+
+            recipientProfileDiv.innerHTML = generateProfileHtml(recipientData) +
+                `<div class="user-info">
+                    <h1 class="user-name" id="recipientName">
+                        ${recipientData.displayName || recipientData.email.split('@')[0]}
+                        ${recipientData.isVerified ? verifiedBadgeSvg : ''}
+                    </h1>
+                    <div class="status-text" id="statusText"></div>
+                </div>`;
+            
+            // Re-assign statusTextElem and recipientNameElem after content re-rendering
+            recipientNameElem = document.getElementById('recipientName');
+            statusTextElem = document.getElementById('statusText');
+        }
+
+        // --- Realtime Database (Online Status & Typing Indicator) ---
+        let userStatusRef = null; // Reference to current user's status
+        let recipientStatusRef = null; // Reference to recipient's status
+        let typingTimeout = null;
+
+        function setupRealtimeStatus() {
+            if (!currentUserId || !recipientId) return;
+
+            // Set up current user's online status
+            userStatusRef = rtdb.ref('/status/' + currentUserId);
+            userStatusRef.set({
+                state: 'online',
+                last_changed: firebase.database.ServerValue.TIMESTAMP,
+                typing_to: null
+            });
+            userStatusRef.onDisconnect().update({
+                state: 'offline',
+                last_changed: firebase.database.ServerValue.TIMESTAMP,
+                typing_to: null
+            });
+
+            // Listen for recipient's online status
+            recipientStatusRef = rtdb.ref('/status/' + recipientId);
+            recipientStatusRef.on('value', (snapshot) => {
+                const status = snapshot.val();
+                if (status) {
+                    if (status.typing_to === currentUserId) {
+                        statusTextElem.innerHTML = `
+                            Typing <span class="typing-indicator">
+                                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                            </span>
+                        `;
+                    } else if (status.state === 'online') {
+                        statusTextElem.textContent = 'Online';
+                    } else {
+                        const lastSeenTime = new Date(status.last_changed);
+                        statusTextElem.textContent = `Last seen ${formatLastSeen(lastSeenTime)}`;
+                    }
+                } else {
+                    statusTextElem.textContent = 'Offline';
+                }
+            });
+
+            // Typing indicator setup (current user sending typing status)
+            messageInput.addEventListener('input', () => {
+                if (!currentUserId || !recipientId) return;
+
+                if (messageInput.value.trim().length > 0) {
+                    userStatusRef.update({ typing_to: recipientId });
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => {
+                        userStatusRef.update({ typing_to: null });
+                    }, 3000); // Stop typing after 3 seconds of no input
+                } else {
+                    if (typingTimeout) clearTimeout(typingTimeout);
+                    userStatusRef.update({ typing_to: null });
+                }
+            });
+        }
+
+        function formatLastSeen(date) {
+            const now = new Date();
+            const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+            if (diffSeconds < 60) return `${diffSeconds}s ago`;
+            if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
+            if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}h ago`;
+            
+            // If it's the same day, just show time
+            if (date.toDateString() === now.toDateString()) {
+                return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // Otherwise, show date and time
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' at ' +
+                   date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+
+        // --- Firestore Chat Logic ---
+        async function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText === "") return;
+            if (!currentUserId || !recipientId || !chatId) {
+                console.error("Chat not fully initialized (user, recipient, or chat ID missing).");
+                alert("Cannot send message. Please refresh or check connection.");
+                return;
+            }
+
+            try {
+                const chatRef = db.collection('chats').doc(chatId);
+                const messagesRef = chatRef.collection('messages');
+
+                // 1. Add the message to the 'messages' subcollection
+                await messagesRef.add({
+                    senderId: currentUserId,
+                    recipientId: recipientId,
+                    text: messageText,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'sent' // Initial status
+                });
+
+                // 2. Update the 'chats' document with the last message info
+                await chatRef.set({
+                    participants: [currentUserId, recipientId].sort(),
+                    lastMessage: messageText,
+                    lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                }, { merge: true });
+
+                messageInput.value = ''; // Clear input field
+                // Temporarily clear typing status after sending message
+                if (userStatusRef) {
+                    clearTimeout(typingTimeout); // Clear any pending typing timeout
+                    userStatusRef.update({ typing_to: null });
+                }
+
+            } catch (error) {
+                console.error("Error sending message:", error);
+                alert("Failed to send message. Please check your console for details and Firebase Rules.");
+            }
+        }
+
+        async function markMessagesAsRead(messagesToUpdate) {
+            if (!currentUserId || !chatId || messagesToUpdate.length === 0) return;
+
+            const batch = db.batch();
+            const chatMessagesRef = db.collection('chats').doc(chatId).collection('messages');
+
+            messagesToUpdate.forEach(msgId => {
+                const messageRef = chatMessagesRef.doc(msgId);
+                batch.update(messageRef, { status: 'read' });
+            });
+
+            try {
+                await batch.commit();
+                console.log("Messages marked as read:", messagesToUpdate.length);
+            } catch (error) {
+                console.error("Error marking messages as read:", error);
+            }
+        }
+
+        function setupMessageListener() {
+            if (!chatId) {
+                console.error("Chat ID not available for message listener.");
+                return;
+            }
+
+            // Unsubscribe previous listener if exists
+            if (messageListenerUnsubscribe) {
+                messageListenerUnsubscribe();
+            }
+
+            messageListenerUnsubscribe = db.collection('chats').doc(chatId).collection('messages')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(async (snapshot) => {
+                    if (snapshot.empty) {
+                        noMessagesDiv.style.display = 'block';
+                        chatMessagesElem.innerHTML = ''; // Clear any existing messages
+                        return;
+                    }
+
+                    noMessagesDiv.style.display = 'none'; // Hide no messages indicator
+
+                    const messagesToMarkAsRead = [];
+                    let shouldScrollToBottom = false;
+
+                    snapshot.docChanges().forEach(change => {
+                        const message = { id: change.doc.id, ...change.doc.data() };
+                        const existingMessageElem = document.getElementById(`msg-${message.id}`);
+
+                        if (change.type === 'added') {
+                            const messageBubble = document.createElement('div');
+                            messageBubble.id = `msg-${message.id}`; // Add ID for easy lookup
+                            messageBubble.className = `message-bubble ${message.senderId === currentUserId ? 'sent' : 'received'}`;
+
+                            let seenIconHtml = '';
+                            if (message.senderId === currentUserId) {
+                                // Default to pending icon initially
+                                seenIconHtml = `<i class="fas fa-clock seen-icon pending"></i>`;
+                            }
+
+                            messageBubble.innerHTML = `
+                                <div class="message-content">
+                                    ${message.text}
+                                </div>
+                                <div class="message-status">
+                                    ${formatMessageTimestamp(message.timestamp)}
+                                    ${seenIconHtml}
+                                </div>
+                            `;
+                            chatMessagesElem.appendChild(messageBubble);
+
+                            // If it's a new message and received by current user and not yet read
+                            if (message.recipientId === currentUserId && message.status !== 'read') {
+                                messagesToMarkAsRead.push(message.id);
+                            }
+                            shouldScrollToBottom = true; // New message, so scroll
+                        } else if (change.type === 'modified' && existingMessageElem) {
+                            // Update existing message if status changed (e.g., seen)
+                            const seenIcon = existingMessageElem.querySelector('.seen-icon');
+                            if (seenIcon) {
+                                if (message.status === 'read') {
+                                    seenIcon.className = 'fas fa-check-double seen-icon double-tick';
+                                } else if (message.status === 'delivered') {
+                                    seenIcon.className = 'fas fa-check seen-icon single-tick';
+                                } else if (message.status === 'sent') {
+                                    seenIcon.className = 'fas fa-clock seen-icon pending';
+                                }
+                            }
+                            // If it's a modification, we don't necessarily scroll, unless it's a new message just added
+                        }
+                    });
+
+                    // Scroll to the bottom if new messages were added
+                    if (shouldScrollToBottom) {
+                         chatMessagesElem.scrollTop = chatMessagesElem.scrollHeight;
+                    }
+
+                    // Mark newly received messages as read after a short delay
+                    if (messagesToMarkAsRead.length > 0) {
+                        setTimeout(() => {
+                            markMessagesAsRead(messagesToMarkAsRead);
+                        }, 500); // Small delay for better UX
+                    }
+                }, (error) => {
+                    console.error("Error listening to messages:", error);
+                    chatMessagesElem.innerHTML = '<div class="no-messages">Error loading messages.</div>';
+                });
+        }
+
+        // --- Initialization ---
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                alert("You are not logged in. Redirecting to login page.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            currentUserId = user.uid;
+
+            const params = getQueryParams();
+            recipientId = params.recipientId;
+            chatId = params.chatId;
+
+            if (!recipientId || !chatId) {
+                alert("Invalid chat parameters. Redirecting to DMs.");
+                window.location.href = "dm.html";
+                return;
+            }
+
+            // Fetch recipient profile data
+            recipientData = await getUserProfile(recipientId);
+            if (!recipientData) {
+                alert("Recipient profile not found.");
+                window.location.href = "dm.html";
+                return;
+            }
+
+            // Initialize chat UI and listeners only once
+            if (!chatInitialized) {
+                updateRecipientHeader(); // Update header with recipient info
+                setupRealtimeStatus();   // Setup online/typing status
+                setupMessageListener();  // Start listening for messages
+                chatInitialized = true;
+            }
+
+            // Event Listeners for message input
+            sendMessageBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+
+        // Cleanup on page unload (e.g., when navigating away)
+        window.addEventListener('beforeunload', () => {
+            // Unsubscribe Firestore listener
+            if (messageListenerUnsubscribe) {
+                messageListenerUnsubscribe();
+            }
+            // Update Realtime Database status
+            if (userStatusRef) {
+                userStatusRef.update({
+                    state: 'offline',
+                    last_changed: firebase.database.ServerValue.TIMESTAMP,
+                    typing_to: null
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Koo | Direct Messages</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #fffbe6;
+            padding-bottom: 70px;
+        }
+
+        .header {
+            background-color: #ffcc00;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header .back-btn {
+            font-size: 24px;
+            color: #000;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        .header .page-title {
+            margin: 0;
+            color: #000;
+            font-size: 20px;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+
+        /* --- Search Bar Container Adjustments --- */
+        .search-bar-container {
+            padding: 10px 15px;
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            position: relative;
+            /* Removed padding-right as input now handles the space */
+        }
+
+        .search-bar-container input {
+            flex-grow: 1;
+            padding: 8px 45px 8px 12px; /* Sufficient right padding for the icon */
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+            box-sizing: border-box;
+            /* Adjusted max-width for overall smaller appearance on desktop/larger mobile */
+            max-width: 95%; /* Make it shorter from the right on larger screens too */
+            margin: 0 auto; /* Center the input within its flex container */
+            display: block; /* Ensure it respects margin auto */
+        }
+
+        .search-bar-container button {
+            background: none;
+            color: #000;
+            border: none;
+            padding: 0;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            font-size: 18px;
+            position: absolute;
+            right: 25px; /* Default position for the icon */
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            z-index: 2; /* Ensure button is above input if there's any overlap */
+        }
+
+        .search-bar-container button:hover {
+            color: #ffcc00;
+            background-color: #f0f0f0;
+        }
+
+        /* --- Search Results Overlay Adjustments --- */
+        .search-results-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 60px;
+            z-index: 1000;
+            display: none;
+            overflow-y: auto;
+        }
+
+        .search-results-content {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 400px;
+            max-height: 80%;
+            overflow-y: auto;
+            padding: 15px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .search-results-content .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 22px;
+            color: #777;
+            cursor: pointer;
+        }
+
+        .search-results-content h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 17px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item .profile-pic, .search-result-item .profile-initial {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ddd;
+        }
+        .search-result-item .profile-initial {
+            font-size: 18px;
+        }
+
+        .search-result-info {
+            flex-grow: 1;
+        }
+
+        .search-result-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-result-email {
+            display: none; /* Hide email in search results */
+        }
+
+        .send-request-btn {
+            background-color: #008000;
+            color: #fff;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .send-request-btn:hover {
+            background-color: #006400;
+        }
+        .send-request-btn.sent {
+            background-color: #e0e0e0;
+            color: #555;
+            cursor: default;
+        }
+        .send-request-btn.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .send-request-btn.chat-now {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .send-request-btn.chat-now:hover {
+             background-color: #0056b3;
+        }
+
+
+        .no-results {
+            text-align: center;
+            color: #777;
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        /* Tabs Section */
+        .tabs-container {
+            display: flex;
+            width: 100%;
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            font-weight: bold;
+            color: #777;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: color 0.2s ease, border-bottom 0.2s ease;
+            font-size: 15px;
+        }
+
+        .tab-button.active {
+            color: #000;
+            border-bottom-color: #ffcc00;
+        }
+
+        .tab-button:hover:not(.active) {
+            color: #555;
+        }
+
+        /* Content Sections */
+        .tab-content {
+            display: none;
+            padding: 12px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Message List Item Styles */
+        .message-list, .request-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .message-item, .request-item {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .message-item:hover, .request-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .message-item .profile-pic, .message-item .profile-initial,
+        .request-item .profile-pic, .request-item .profile-initial {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        .message-item .profile-initial, .request-item .profile-initial {
+            font-size: 20px;
+        }
+
+        .message-info, .request-info {
+            flex-grow: 1;
+        }
+
+        .message-name, .request-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .message-preview {
+            font-size: 13px;
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .request-actions button {
+            padding: 7px 12px;
+            border-radius: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border: none;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .accept-btn {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .accept-btn:hover {
+            background-color: #218838;
+        }
+
+        .decline-btn {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        .decline-btn:hover {
+            background-color: #c82333;
+        }
+
+        .no-content-message {
+            text-align: center;
+            padding: 40px 15px;
+            color: #777;
+            font-size: 15px;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 60px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .footer i {
+            font-size: 22px;
+            color: #000;
+            cursor: pointer;
+        }
+
+        /* Verified Badge Styling */
+        .verified-badge {
+            width: 16px;
+            height: 16px;
+            margin-left: 4px;
+            flex-shrink: 0;
+        }
+        .header .verified-badge {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Media queries for mobile screens */
+        @media (max-width: 768px) { /* Targeting typical mobile/tablet portrait */
+            .search-bar-container input {
+                /* Reduce max-width to make it shorter from the right */
+                max-width: 90%; /* This makes the box shorter on mobile */
+            }
+            .search-bar-container button {
+                /* Adjust button position based on new input width */
+                right: calc(5% + 15px); /* 5% of container + half of button width + desired offset */
+                                        /* 5% because max-width is 90%, leaving 10% for margins, so 5% on right */
+            }
+        }
+
+        @media (max-width: 360px) { /* For very small screens */
+            .search-bar-container input {
+                font-size: 14px;
+                padding: 7px 40px 7px 10px; /* Adjust right padding for smaller button area */
+                max-width: 88%; /* Even shorter for very small screens */
+            }
+            .search-bar-container button {
+                font-size: 16px;
+                right: calc(6% + 15px); /* Adjust position for even shorter input */
+            }
+            .search-results-content {
+                padding: 10px;
+            }
+            .search-result-item {
+                gap: 10px;
+            }
+            .search-result-item .profile-pic, .search-result-item .profile-initial {
+                width: 35px;
+                height: 35px;
+            }
+            .search-result-item .profile-initial {
+                font-size: 16px;
+            }
+            .search-result-name {
+                font-size: 14px;
+            }
+            .send-request-btn, .request-actions button {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            .message-item .profile-pic, .message-item .profile-initial,
+            .request-item .profile-pic, .request-item .profile-initial {
+                width: 40px;
+                height: 40px;
+            }
+            .message-item .profile-initial, .request-item .profile-initial {
+                font-size: 18px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <i class="fas fa-arrow-left back-btn" onclick="window.history.back()"></i>
+        <h1 class="page-title">Direct Messages</h1>
+    </div>
+
+    <div class="search-bar-container">
+        <input type="text" id="userSearchInput" placeholder="Search users to chat...">
+        <button onclick="searchUsers()" aria-label="Search"><i class="fas fa-search"></i></button>
+    </div>
+
+    <div class="tabs-container">
+        <button class="tab-button active" onclick="openDmTab(event, 'allMessages')">All Messages</button>
+        <button class="tab-button" onclick="openDmTab(event, 'requests')">Requests</button>
+    </div>
+
+    <div id="allMessages" class="tab-content active">
+        <div class="message-list" id="allMessagesList">
+            <div class="no-content-message" id="noMessages">No ongoing chats.</div>
+        </div>
+    </div>
+
+    <div id="requests" class="tab-content">
+        <div class="request-list" id="requestsList">
+            <div class="no-content-message" id="noRequests">No pending chat requests.</div>
+        </div>
+    </div>
+
+    <div class="search-results-overlay" id="searchResultsOverlay">
+        <div class="search-results-content">
+            <button class="close-btn" onclick="closeSearchResults()">&times;</button>
+            <h3>Search Results</h3>
+            <div id="searchResultsList">
+                <div class="no-results">No users found.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <i class="fas fa-home" title="Home" onclick="window.location.href='home.html'"></i>
+        <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
+        <i class="fas fa-search" title="Search" onclick="window.location.href='search.html'"></i>
+        <i class="fas fa-user-circle" title="Profile" onclick="window.location.href='profile.html'"></i>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Config (Replace with your actual config)
+        const firebaseConfig = {
+          apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+          authDomain: "petpal-15621.firebaseapp.com",
+          projectId: "petpal-15621",
+          storageBucket: "petpal-15621.firebaseastorage.app",
+          messagingSenderId: "251985816504",
+          appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
+          measurementId: "G-Z2ED9VCCZY"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentLoggedInUser = null;
+        let allAppUsers = []; // Store all users fetched once
+
+        const allMessagesList = document.getElementById('allMessagesList');
+        const requestsList = document.getElementById('requestsList');
+        const noMessagesDiv = document.getElementById('noMessages');
+        const noRequestsDiv = document.getElementById('noRequests');
+        const searchResultsOverlay = document.getElementById('searchResultsOverlay');
+        const searchResultsList = document.getElementById('searchResultsList');
+        const userSearchInput = document.getElementById('userSearchInput');
+
+        // SVG for the verified badge
+        const verifiedBadgeSvg = `
+            <svg class="verified-badge" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+                <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                    <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                    <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+                </g>
+            </svg>
+        `;
+
+        // --- Utility Functions ---
+        async function getUserProfile(userId) {
+            // Check in cached allAppUsers first
+            const cachedUser = allAppUsers.find(user => user.id === userId);
+            if (cachedUser) {
+                return cachedUser;
+            }
+
+            // If not found in cache, fetch from Firestore
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    const user = { id: userDoc.id, ...userDoc.data() };
+                    // Optionally add to cache if not already there
+                    if (!allAppUsers.some(u => u.id === user.id)) {
+                        allAppUsers.push(user);
+                    }
+                    return user;
+                }
+                return null;
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                return null;
+            }
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '';
+            const date = timestamp.toDate();
+            const now = new Date();
+            const diff = now.getTime() - date.getTime();
+
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (seconds < 60) return `${seconds}s ago`;
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+
+        // --- Tab Switching Logic ---
+        function openDmTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+
+            if (tabName === 'allMessages') {
+                setupAllMessagesListener();
+                if (requestsListenerUnsubscribe) requestsListenerUnsubscribe(); // Stop requests listener
+            } else if (tabName === 'requests') {
+                setupRequestsListener();
+                if (allMessagesListenerUnsubscribe) allMessagesListenerUnsubscribe(); // Stop messages listener
+            }
+        }
+
+        // --- Search Functionality ---
+        async function fetchAllUsers() {
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                allAppUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log("All app users fetched:", allAppUsers.length);
+            } catch (error) {
+                console.error("Error fetching all users:", error);
+            }
+        }
+
+        async function searchUsers() {
+            const searchTerm = userSearchInput.value.trim().toLowerCase();
+            searchResultsList.innerHTML = '<div class="no-results">Searching...</div>';
+            searchResultsOverlay.style.display = 'flex';
+
+            if (!allAppUsers.length) {
+                await fetchAllUsers(); // Fetch all users if not already cached
+            }
+
+            let filteredUsers = [];
+            if (searchTerm) {
+                filteredUsers = allAppUsers.filter(user => {
+                    const displayName = user.displayName ? user.displayName.toLowerCase() : '';
+                    const email = user.email ? user.email.toLowerCase() : '';
+                    // Check if display name OR email contains the search term
+                    return (displayName.includes(searchTerm) || email.includes(searchTerm));
+                });
+            } else {
+                // If search term is empty, show all users (excluding current user)
+                filteredUsers = allAppUsers;
+            }
+
+            searchResultsList.innerHTML = '';
+            let hasResults = false;
+
+            if (currentLoggedInUser) {
+                for (const user of filteredUsers) {
+                    if (user.id === currentLoggedInUser.uid) continue; // Don't show self in results
+
+                    hasResults = true;
+                    const profilePicUrl = user.profilePicUrl || null;
+                    const displayUsername = user.displayName || user.email.split('@')[0];
+                    const isUserVerified = user.isVerified === true;
+                    const firstLetter = displayUsername.charAt(0).toUpperCase();
+
+                    const searchItem = document.createElement('div');
+                    searchItem.className = 'search-result-item';
+                    searchItem.innerHTML = `
+                        ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${firstLetter}</div>`}
+                        <div class="search-result-info">
+                            <div class="search-result-name">
+                                ${displayUsername}
+                                ${isUserVerified ? verifiedBadgeSvg : ''}
+                            </div>
+                            </div>
+                        <button class="send-request-btn" data-target-user-id="${user.id}">Send Request</button>
+                    `;
+                    searchResultsList.appendChild(searchItem);
+
+                    const sendButton = searchItem.querySelector('.send-request-btn');
+                    sendButton.onclick = () => sendChatRequest(sendButton, user.id);
+                    await updateSendRequestButtonState(sendButton, user.id); // Update button state
+                }
+            } else {
+                searchResultsList.innerHTML = '<div class="no-results">Please log in to search for users.</div>';
+            }
+
+
+            if (!hasResults && currentLoggedInUser) {
+                searchResultsList.innerHTML = '<div class="no-results">No users found matching your search.</div>';
+            } else if (!currentLoggedInUser && !hasResults) {
+                 searchResultsList.innerHTML = '<div class="no-results">Please log in to search for users.</div>';
+            }
+        }
+
+        function closeSearchResults() {
+            searchResultsOverlay.style.display = 'none';
+            searchResultsList.innerHTML = '<div class="no-results">No users found.</div>'; // Clear results
+            userSearchInput.value = ''; // Clear search input
+        }
+
+        async function updateSendRequestButtonState(button, targetUserId) {
+            const currentUserId = currentLoggedInUser.uid;
+
+            // Check if a chat exists
+            const chatDocId1 = [currentUserId, targetUserId].sort().join('_');
+            const chatDocId2 = [targetUserId, currentUserId].sort().join('_'); // Just in case, though sorting should make it consistent
+            const chatSnap1 = await db.collection('chats').doc(chatDocId1).get();
+            const chatSnap2 = await db.collection('chats').doc(chatDocId2).get();
+
+            if (chatSnap1.exists || chatSnap2.exists) {
+                button.textContent = "Chat Now";
+                button.classList.add('chat-now');
+                button.classList.remove('send-request-btn', 'sent'); // Ensure 'sent' is removed
+                button.onclick = () => window.location.href = `chat.html?chatId=${chatSnap1.id || chatSnap2.id}&recipientId=${targetUserId}`;
+                return;
+            }
+
+            // Check if a request already exists (sent by current user or received from target user)
+            const sentRequestQuery = await db.collection('chatRequests')
+                .where('senderId', '==', currentUserId)
+                .where('recipientId', '==', targetUserId)
+                .where('status', '==', 'pending') // Only pending requests
+                .get();
+
+            const receivedRequestQuery = await db.collection('chatRequests')
+                .where('senderId', '==', targetUserId)
+                .where('recipientId', '==', currentLoggedInUser.uid)
+                .where('status', '==', 'pending') // Only pending requests
+                .get();
+
+            if (!sentRequestQuery.empty) {
+                button.textContent = "Request Sent";
+                button.classList.add('sent');
+                button.disabled = true;
+            } else if (!receivedRequestQuery.empty) {
+                // If there's a pending request from the target user, they can accept it from "Requests" tab
+                button.textContent = "Accept Pending"; // Or "View Request"
+                button.classList.add('sent'); // Visually indicate it's not "send" action
+                button.disabled = true; // Disable sending another request
+            } else {
+                button.textContent = "Send Request";
+                button.classList.remove('sent', 'chat-now');
+                button.disabled = false;
+            }
+        }
+
+        async function sendChatRequest(button, recipientId) {
+            if (!currentLoggedInUser) {
+                alert("Please log in to send chat requests.");
+                return;
+            }
+
+            const senderId = currentLoggedInUser.uid;
+            if (senderId === recipientId) {
+                alert("You cannot send a chat request to yourself.");
+                return;
+            }
+
+            // Check for existing request or chat (re-check to be safe)
+            const chatDocId = [senderId, recipientId].sort().join('_');
+            const chatDoc = await db.collection('chats').doc(chatDocId).get();
+            if (chatDoc.exists) {
+                alert("A chat with this user already exists. Redirecting to chat.");
+                window.location.href = `chat.html?chatId=${chatDoc.id}&recipientId=${recipientId}`;
+                return;
+            }
+
+            const existingRequests = await db.collection('chatRequests')
+                .where('senderId', '==', senderId)
+                .where('recipientId', '==', recipientId)
+                .where('status', '==', 'pending')
+                .get();
+            
+            const existingReverseRequests = await db.collection('chatRequests')
+                .where('senderId', '==', recipientId)
+                .where('recipientId', '==', currentLoggedInUser.uid)
+                .where('status', '==', 'pending')
+                .get();
+
+            if (!existingRequests.empty) {
+                alert("You have already sent a pending chat request to this user.");
+                return;
+            }
+            if (!existingReverseRequests.empty) {
+                alert("This user has already sent you a pending chat request. Please check your 'Requests' tab.");
+                return;
+            }
+
+            try {
+                await db.collection('chatRequests').add({
+                    senderId: senderId,
+                    recipientId: recipientId,
+                    status: 'pending', // 'pending', 'accepted', 'declined'
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                button.textContent = "Request Sent";
+                button.classList.add('sent');
+                button.disabled = true;
+                alert("Chat request sent!");
+            } catch (error) {
+                console.error("Error sending chat request:", error);
+                alert("Failed to send chat request. Please try again.");
+            }
+        }
+
+        // --- All Messages Section ---
+        let allMessagesListenerUnsubscribe = null;
+
+        function setupAllMessagesListener() {
+            if (allMessagesListenerUnsubscribe) {
+                allMessagesListenerUnsubscribe();
+            }
+            if (!currentLoggedInUser) return;
+
+            const userId = currentLoggedInUser.uid;
+            allMessagesList.innerHTML = ''; // Clear current list
+            noMessagesDiv.style.display = 'block'; // Show no messages by default
+
+            // Listen for chats where current user is a participant
+            allMessagesListenerUnsubscribe = db.collection('chats')
+                .where('participants', 'array-contains', userId)
+                .orderBy('lastMessageTimestamp', 'desc') // Order by last message time
+                .onSnapshot(async (snapshot) => {
+                    allMessagesList.innerHTML = ''; // Clear for fresh render
+                    if (snapshot.empty) {
+                        noMessagesDiv.style.display = 'block';
+                        return;
+                    }
+
+                    noMessagesDiv.style.display = 'none';
+                    const messageItems = [];
+
+                    for (const doc of snapshot.docs) {
+                        const chat = { id: doc.id, ...doc.data() };
+                        const otherParticipantId = chat.participants.find(p => p !== userId);
+                        if (!otherParticipantId) continue; // Should not happen for valid 2-person chats
+
+                        const otherUserProfile = await getUserProfile(otherParticipantId);
+                        if (!otherUserProfile) continue; // If user profile not found
+
+                        const profilePicUrl = otherUserProfile.profilePicUrl || null;
+                        const displayUsername = otherUserProfile.displayName || otherUserProfile.email.split('@')[0];
+                        const isUserVerified = otherUserProfile.isVerified === true;
+                        const firstLetter = displayUsername.charAt(0).toUpperCase();
+                        const lastMessage = chat.lastMessage || "No messages yet.";
+                        const lastMessageTime = chat.lastMessageTimestamp ? formatTimestamp(chat.lastMessageTimestamp) : '';
+
+                        const messageItem = document.createElement('div');
+                        messageItem.className = 'message-item';
+                        messageItem.dataset.chatId = chat.id;
+                        messageItem.dataset.recipientId = otherParticipantId;
+                        messageItem.onclick = () => window.location.href = `chat.html?chatId=${chat.id}&recipientId=${otherParticipantId}`;
+
+                        messageItem.innerHTML = `
+                            ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${firstLetter}</div>`}
+                            <div class="message-info">
+                                <div class="message-name">
+                                    ${displayUsername}
+                                    ${isUserVerified ? verifiedBadgeSvg : ''}
+                                </div>
+                                <div class="message-preview">${lastMessage}</div>
+                            </div>
+                            <div class="message-time">${lastMessageTime}</div>
+                        `;
+                        messageItems.push(messageItem);
+                    }
+                    // Append all message items after they are created
+                    messageItems.forEach(item => allMessagesList.appendChild(item));
+                }, (error) => {
+                    console.error("Error listening to all messages:", error);
+                    allMessagesList.innerHTML = '<div class="no-content-message">Error loading chats.</div>';
+                    noMessagesDiv.style.display = 'none';
+                });
+        }
+
+        // --- Requests Section ---
+        let requestsListenerUnsubscribe = null;
+
+        function setupRequestsListener() {
+            if (requestsListenerUnsubscribe) {
+                requestsListenerUnsubscribe();
+            }
+            if (!currentLoggedInUser) return;
+
+            const userId = currentLoggedInUser.uid;
+            requestsList.innerHTML = ''; // Clear current list
+            noRequestsDiv.style.display = 'block'; // Show no requests by default
+
+            requestsListenerUnsubscribe = db.collection('chatRequests')
+                .where('recipientId', '==', userId)
+                .where('status', '==', 'pending')
+                .orderBy('timestamp', 'desc')
+                .onSnapshot(async (snapshot) => {
+                    requestsList.innerHTML = ''; // Clear for fresh render
+                    if (snapshot.empty) {
+                        noRequestsDiv.style.display = 'block';
+                        return;
+                    }
+
+                    noRequestsDiv.style.display = 'none';
+                    const requestItems = [];
+
+                    for (const doc of snapshot.docs) {
+                        const request = { id: doc.id, ...doc.data() };
+                        const senderProfile = await getUserProfile(request.senderId);
+                        if (!senderProfile) continue; // If sender profile not found
+
+                        const profilePicUrl = senderProfile.profilePicUrl || null;
+                        const displayUsername = senderProfile.displayName || senderProfile.email.split('@')[0];
+                        const isUserVerified = senderProfile.isVerified === true;
+                        const firstLetter = displayUsername.charAt(0).toUpperCase();
+
+                        const requestItem = document.createElement('div');
+                        requestItem.className = 'request-item';
+                        requestItem.innerHTML = `
+                            ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${firstLetter}</div>`}
+                            <div class="request-info">
+                                <div class="request-name">
+                                    ${displayUsername}
+                                    ${isUserVerified ? verifiedBadgeSvg : ''}
+                                </div>
+                                <div class="request-preview">Wants to chat with you.</div>
+                            </div>
+                            <div class="request-actions">
+                                <button class="accept-btn" data-request-id="${request.id}" data-sender-id="${request.senderId}" onclick="acceptChatRequest(this, '${request.id}', '${request.senderId}')">Accept</button>
+                                <button class="decline-btn" data-request-id="${request.id}" onclick="declineChatRequest(this, '${request.id}')">Decline</button>
+                            </div>
+                        `;
+                        requestItems.push(requestItem);
+                    }
+                    requestItems.forEach(item => requestsList.appendChild(item));
+                }, (error) => {
+                    console.error("Error listening to chat requests:", error);
+                    requestsList.innerHTML = '<div class="no-content-message">Error loading requests.</div>';
+                    noRequestsDiv.style.display = 'none';
+                });
+        }
+
+        async function acceptChatRequest(button, requestId, senderId) {
+            try {
+                const batch = db.batch();
+                const requestRef = db.collection('chatRequests').doc(requestId);
+
+                // 1. Update request status
+                batch.update(requestRef, { status: 'accepted' });
+
+                // 2. Create a chat document
+                const chatParticipants = [currentLoggedInUser.uid, senderId].sort(); // Ensure consistent chat ID
+                const chatDocId = chatParticipants.join('_');
+                const chatRef = db.collection('chats').doc(chatDocId);
+
+                batch.set(chatRef, {
+                    participants: chatParticipants,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessage: "Chat started!",
+                    lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                }, { merge: true }); // Use merge to avoid overwriting if it exists for some reason
+
+                await batch.commit();
+
+                alert("Chat request accepted! You can now chat with this user.");
+                // Redirect to the new chat or the all messages tab
+                window.location.href = `chat.html?chatId=${chatDocId}&recipientId=${senderId}`;
+
+            } catch (error) {
+                console.error("Error accepting chat request:", error);
+                alert("Failed to accept chat request. Please try again.");
+            }
+        }
+
+        async function declineChatRequest(button, requestId) {
+            if (confirm("Are you sure you want to decline this chat request?")) {
+                try {
+                    await db.collection('chatRequests').doc(requestId).update({
+                        status: 'declined',
+                        declinedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    alert("Chat request declined.");
+                    // The listener will automatically remove the item from the UI
+                } catch (error) {
+                    console.error("Error declining chat request:", error);
+                    alert("Failed to decline chat request. Please try again.");
+                }
+            }
+        }
+
+        // --- Initialization ---
+        auth.onAuthStateChanged(async user => { // Made async to await fetchAllUsers
+            if (!user) {
+                alert("You are not logged in. Redirecting to login page.");
+                window.location.href = "index.html";
+            } else {
+                currentLoggedInUser = user;
+                await fetchAllUsers(); // Fetch all users when the user logs in
+                // Initialize with 'All Messages' tab by default
+                openDmTab({ currentTarget: document.querySelector('.tab-button.active') }, 'allMessages');
+            }
+        });
+
+        // Event listener for Enter key on search input
+        userSearchInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                searchUsers();
+            }
+        });
+
+        // Optional: Live search as user types (uncomment if desired)
+        // userSearchInput.addEventListener('input', function() {
+        //     searchUsers();
+        // });
+    </script>
+
+</body>
+</html>
