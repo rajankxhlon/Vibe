@@ -472,8 +472,7 @@
   <button class="koo-btn" onclick="window.location.href='create.html'">Koo +</button>
 
   <div class="footer">
-    <i class="fas fa-home" title="Home" onclick="openTab(event, 'feed')"></i>
-    <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
+    <i class="fas fa-home" title="Home" onclick="shuffleAndRenderFeed()"></i> <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
     <i class="fas fa-search" title="Search" onclick="window.location.href='search.html'"></i>
     <i class="fas fa-user-circle" title="Profile" onclick="window.location.href='profile.html'"></i>
   </div>
@@ -507,8 +506,8 @@
 
     const notificationBadge = document.getElementById('notificationBadge');
 
-
     let currentLoggedInUserId = null;
+    let allKoosData = []; // New array to store all fetched Koos
 
     // SVG for the verified badge
     const verifiedBadgeSvg = `
@@ -567,6 +566,7 @@
           if (allUsersListenerUnsubscribe) {
               allUsersListenerUnsubscribe(); // Unsubscribe from people listener
           }
+          renderFeedFromAllKoos(); // Re-render the feed when feed tab is opened
       } else if (tabName === 'people') {
           // Activate all users listener for the people tab
           setupAllUsersListener();
@@ -613,7 +613,7 @@
         window.location.href = `user_profile.html?userId=${userId}`;
     }
 
-    // Fisher-Yates (Knuth) Shuffle algorithm (no longer used for feed, but good to keep as utility)
+    // Fisher-Yates (Knuth) Shuffle algorithm
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -621,13 +621,12 @@
         }
     }
 
-
-    // --- Koo Feed Logic ---
-    async function renderKoo(koo) {
+    // --- Koo Feed Rendering Logic ---
+    async function createKooCardElement(koo) {
       const userProfile = await getUserProfile(koo.userId);
       const profilePicUrl = userProfile && userProfile.profilePicUrl ? userProfile.profilePicUrl : null;
       const displayUsername = userProfile && userProfile.displayName ? userProfile.displayName : (koo.username || 'Anonymous');
-      const isUserVerified = userProfile && userProfile.isVerified === true; // Check for verified status
+      const isUserVerified = userProfile && userProfile.isVerified === true;
       const firstLetter = displayUsername.charAt(0).toUpperCase();
 
       const kooCard = document.createElement('div');
@@ -651,6 +650,7 @@
               </div>
           `;
       } else {
+          // Check if current user is following this post's author
           const currentUserProfile = await getUserProfile(currentLoggedInUserId);
           const isFollowing = currentUserProfile && currentUserProfile.following && currentUserProfile.following.includes(koo.userId);
           
@@ -686,8 +686,39 @@
           </button>
         </div>
       `;
-      
-      kooFeed.appendChild(kooCard);
+      return kooCard;
+    }
+
+    async function renderFeedFromAllKoos() {
+        kooFeed.innerHTML = ''; // Clear existing Koos
+        loadingMessage.style.display = 'block';
+        if (allKoosData.length === 0) {
+            kooFeed.innerHTML = '<div class="no-koos-message">No Koos yet! Be the first to post.</div>';
+            loadingMessage.style.display = 'none';
+            return;
+        }
+
+        // Render Koos one by one
+        for (const koo of allKoosData) {
+            const kooCardElement = await createKooCardElement(koo);
+            kooFeed.appendChild(kooCardElement);
+        }
+        loadingMessage.style.display = 'none';
+        // Remove the "No Koos yet!" message if it exists and there are cards
+        const noKoosMsgElem = kooFeed.querySelector('.no-koos-message');
+        if (noKoosMsgElem && noKoosMsgElem.textContent.includes('No Koos yet!')) {
+            noKoosMsgElem.remove();
+        }
+    }
+
+    function shuffleAndRenderFeed() {
+        if (document.getElementById('feed').classList.contains('active')) {
+            shuffleArray(allKoosData);
+            renderFeedFromAllKoos();
+        } else {
+            // If not on feed tab, just switch to it and the re-render will happen
+            openTab(null, 'feed');
+        }
     }
 
     function togglePostOptions(button, kooId) {
@@ -717,7 +748,7 @@
             try {
                 await db.collection("koos").doc(kooId).delete();
                 alert("Koo deleted successfully!");
-                document.getElementById(`koo-${kooId}`).remove();
+                // The real-time listener will handle removing it from allKoosData and re-rendering
             } catch (error) {
                 console.error("Error deleting Koo:", error);
                 alert("Failed to delete Koo. Please try again.");
@@ -828,92 +859,39 @@
     }
 
     // --- Real-time Koo Feed Listener ---
-    const currentKooIds = new Set(); // To keep track of Koo IDs currently rendered
+    // Removed currentKooIds set as allKoosData will be the single source of truth
+    let koosListenerUnsubscribe = null;
 
-    db.collection("koos").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
-        // Only update if the 'feed' tab is currently active to avoid unnecessary rendering
-        if (!document.getElementById('feed').classList.contains('active')) {
-            return; 
+    function setupKoosListener() {
+        if (koosListenerUnsubscribe) {
+            koosListenerUnsubscribe(); // Unsubscribe from previous listener
         }
+        koosListenerUnsubscribe = db.collection("koos").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach(async (change) => {
+                const kooData = { ...change.doc.data(), id: change.doc.id };
 
-        snapshot.docChanges().forEach(async (change) => {
-            const kooData = { ...change.doc.data(), id: change.doc.id };
-            const existingKooCard = document.getElementById(`koo-${kooData.id}`);
-
-            if (change.type === "added") {
-                if (!existingKooCard && !currentKooIds.has(kooData.id)) { // Double check to prevent duplicates
-                    await renderKoo(kooData);
-                    const newCard = document.getElementById(`koo-${kooData.id}`);
-                    if (newCard) {
-                        kooFeed.prepend(newCard); // Always prepend new Koos to the top
-                        currentKooIds.add(kooData.id);
+                if (change.type === "added") {
+                    allKoosData.unshift(kooData); // Add new Koos to the beginning
+                } else if (change.type === "modified") {
+                    const index = allKoosData.findIndex(k => k.id === kooData.id);
+                    if (index !== -1) {
+                        allKoosData[index] = kooData; // Update existing Koo
                     }
+                } else if (change.type === "removed") {
+                    allKoosData = allKoosData.filter(k => k.id !== kooData.id); // Remove Koo
                 }
-            } else if (change.type === "modified") {
-                if (existingKooCard) {
-                    // Update only dynamic parts like likes and rekoos directly for efficiency
-                    const likeCountSpan = existingKooCard.querySelector(`#like-count-${kooData.id}`);
-                    const rekooCountSpan = existingKooCard.querySelector(`#rekoo-count-${kooData.id}`);
-                    const likeButton = existingKooCard.querySelector(`.koo-action-btn:nth-child(1)`);
-                    const likeIcon = likeButton.querySelector('i');
-                    const rekooButton = existingKooCard.querySelector(`.koo-action-btn:nth-child(3)`);
-
-                    const hasLiked = kooData.likes && kooData.likes.includes(currentLoggedInUserId);
-                    const rekooCount = kooData.rekoos ? kooData.rekoos.length : 0;
-                    const likeCount = kooData.likes ? kooData.likes.length : 0;
-
-                    if (likeCountSpan) {
-                        likeCountSpan.textContent = likeCount;
-                        if (hasLiked) {
-                            likeIcon.classList.remove('far');
-                            likeIcon.classList.add('fas', 'liked');
-                        } else {
-                            likeIcon.classList.remove('fas', 'liked');
-                            likeIcon.classList.add('far');
-                        }
-                    }
-                    if (rekooCountSpan) {
-                        rekooCountSpan.textContent = rekooCount > 0 ? rekooCount : '';
-                        if (kooData.rekoos && kooData.rekoos.includes(currentLoggedInUserId)) {
-                            rekooButton.classList.add('rekooed');
-                        } else {
-                            rekooButton.classList.remove('rekooed');
-                        }
-                    }
-                    // For other changes (text, image, etc.), you might still want to re-render the whole card:
-                    // existingKooCard.remove();
-                    // await renderKoo(kooData);
-                    // kooFeed.prepend(document.getElementById(`koo-${kooData.id}`));
-                }
-            } else if (change.type === "removed") {
-                if (existingKooCard) {
-                    existingKooCard.remove();
-                    currentKooIds.delete(kooData.id);
-                }
+            });
+            // Re-render the feed only if the 'feed' tab is active
+            if (document.getElementById('feed').classList.contains('active')) {
+                renderFeedFromAllKoos();
             }
+        }, (error) => {
+            console.error("Error listening to Koos:", error);
+            loadingMessage.style.display = 'none';
+            kooFeed.innerHTML = '<div class="no-koos-message">Failed to load Koos. Please try again.</div>';
+            alert("Failed to subscribe to Koo updates.");
         });
-        
-        // After all changes, manage the loading/no-koos messages
-        loadingMessage.style.display = 'none';
-        const kooCards = kooFeed.querySelectorAll('.koo-card');
-        if (kooCards.length === 0) {
-            if (!kooFeed.querySelector('.no-koos-message')) { // Add only if not already present
-                kooFeed.innerHTML = '<div class="no-koos-message">No Koos yet! Be the first to post.</div>';
-            }
-        } else {
-            // Remove the "No Koos yet!" message if it exists and there are cards
-            const noKoosMsgElem = kooFeed.querySelector('.no-koos-message');
-            if (noKoosMsgElem && noKoosMsgElem.textContent.includes('No Koos yet!')) {
-                noKoosMsgElem.remove();
-            }
-        }
-    }, (error) => {
-        console.error("Error listening to Koos:", error);
-        loadingMessage.style.display = 'none';
-        kooFeed.innerHTML = '<div class="no-koos-message">Failed to load Koos. Please try again.</div>';
-        alert("Failed to subscribe to Koo updates.");
-    });
-
+    }
 
     // --- People Section Logic ---
     async function renderPersonCard(user) {
@@ -957,43 +935,6 @@
       return personCard;
     }
 
-    // This function is no longer directly called to *fetch* people, but used by the listener
-    // async function fetchPeople() {
-    //     loadingPeopleMessage.style.display = 'block';
-    //     noPeopleMessage.style.display = 'none';
-    //     peopleListDiv.innerHTML = ''; // Clear previous list items, keep loading message
-
-    //     try {
-    //         const usersSnapshot = await db.collection('users').get();
-    //         let allUsers = [];
-    //         usersSnapshot.forEach(doc => {
-    //             allUsers.push({ id: doc.id, ...doc.data() });
-    //         });
-
-    //         // Filter out the currently logged-in user
-    //         allUsers = allUsers.filter(user => user.id !== currentLoggedInUserId);
-
-    //         // Sort users by follower count (descending)
-    //         allUsers.sort((a, b) => (b.followers ? b.followers.length : 0) - (a.followers ? a.followers.length : 0));
-
-    //         loadingPeopleMessage.style.display = 'none';
-
-    //         if (allUsers.length === 0) {
-    //             noPeopleMessage.style.display = 'block'; // Show if no other users found
-    //         } else {
-    //             noPeopleMessage.style.display = 'none'; // Hide if users are found
-    //             for (const user of allUsers) {
-    //                 await renderPersonCard(user);
-    //             }
-    //         }
-
-    //     } catch (error) {
-    //         console.error("Error fetching people:", error);
-    //         loadingPeopleMessage.style.display = 'none';
-    //         alert("Failed to load people. Please try again.");
-    //     }
-    // }
-
     async function toggleFollow(button, targetUserId) {
         const currentUser = auth.currentUser;
         if (!currentUser) {
@@ -1015,7 +956,7 @@
             const targetUserData = targetUserDoc.data() || {};
 
             let currentUserFollowing = currentUserData.following || [];
-            let targetUserFollowers = targetUserData.followers || [];
+            let targetUserFollowers = targetUserData.followers || {}; // Changed to object for easier removal
 
             const isFollowing = currentUserFollowing.includes(targetUserId);
 
@@ -1144,10 +1085,6 @@
                     return; // Only update if the 'people' tab is active
                 }
 
-                // If this is the first time the listener fires or a significant change
-                // occurred (e.g., re-sorting or large batch update), clear and re-render.
-                // Otherwise, perform granular updates.
-                
                 // Collect existing user IDs in the DOM
                 peopleListDiv.querySelectorAll('.person-card').forEach(card => currentUsersOnDisplay.add(card.id.replace('user-', '')));
 
@@ -1178,7 +1115,6 @@
                                 const isUserVerified = userData.isVerified === true;
                                 personNameSpan.innerHTML = `${displayUsername} ${isUserVerified ? verifiedBadgeSvg : ''}`;
                             }
-                            // Re-evaluate follow button state (covered by setupCurrentUserProfileListener)
                         } else {
                             // If modified and not existing (e.g., user was just created or became public)
                             usersToRender.push(userData);
@@ -1191,12 +1127,20 @@
                     }
                 });
 
-                // Render newly added or re-added (modified non-existing) users
-                for (const user of usersToRender) {
-                    const newCard = await renderPersonCard(user);
-                    if (newCard) {
-                        initialUsersLoaded.add(user.id);
+                // Clear and re-render all people cards to ensure correct sorting and updates
+                peopleListDiv.innerHTML = '';
+                let allSortedUsers = [];
+                snapshot.docs.forEach(doc => {
+                    const userData = { ...doc.data(), id: doc.id };
+                    if (userData.id !== currentLoggedInUserId) {
+                        allSortedUsers.push(userData);
                     }
+                });
+                // Sort users by follower count (descending)
+                allSortedUsers.sort((a, b) => (b.followers ? b.followers.length : 0) - (a.followers ? a.followers.length : 0));
+
+                for (const user of allSortedUsers) {
+                    await renderPersonCard(user);
                 }
                 
                 loadingPeopleMessage.style.display = 'none';
@@ -1281,18 +1225,16 @@
             currentUsernameSpan.insertAdjacentHTML('beforeend', verifiedBadgeSvg);
         }
 
-        // Initialize with feed tab and setup relevant listeners
-        openTab(null, 'feed'); 
+        // Setup real-time listeners
+        setupKoosListener(); // Start listening for Koos
         updateNotificationBadge(); // Initial badge check on load
         setupNotificationsListener(); // Setup the real-time notification listener
         setupCurrentUserProfileListener(); // Setup listener for current user's profile changes (following)
+
+        // Initialize with feed tab
+        openTab(null, 'feed'); 
       }
     });
-
-    // Footer Navigation (Unchanged)
-    document.querySelector('.footer .fa-hashtag').onclick = () => window.location.href='trending.html';
-    document.querySelector('.footer .fa-search').onclick = () => window.location.href='search.html';
-    document.querySelector('.footer .fa-user-circle').onclick = () => window.location.href='profile.html';
 
     // Ensure initial tab is set if auth state is already determined
     document.addEventListener('DOMContentLoaded', () => {
