@@ -560,13 +560,12 @@
 
       // Manage listeners based on active tab
       if (tabName === 'feed') {
-          // The Koo feed listener is always active (defined globally)
           // Ensure current user profile listener is active to update follow buttons on posts
           setupCurrentUserProfileListener();
           if (allUsersListenerUnsubscribe) {
               allUsersListenerUnsubscribe(); // Unsubscribe from people listener
           }
-          renderFeedFromAllKoos(); // Re-render the feed when feed tab is opened
+          // The Koo feed listener is always active and will handle rendering
       } else if (tabName === 'people') {
           // Activate all users listener for the people tab
           setupAllUsersListener();
@@ -681,13 +680,58 @@
           <button class="koo-action-btn" onclick="openComments('${koo.id}')">
             <i class="far fa-comment"></i> Comment
           </button>
-          <button class="koo-action-btn" onclick="rekooPost('${koo.id}')">
+          <button class="koo-action-btn ${koo.rekoos && koo.rekoos.includes(currentLoggedInUserId) ? 'rekooed' : ''}" onclick="rekooPost('${koo.id}')">
             <i class="fas fa-retweet"></i> <span id="rekoo-count-${koo.id}">${rekooCount > 0 ? rekooCount : ''}</span>
           </button>
         </div>
       `;
       return kooCard;
     }
+
+    // New function to update an existing Koo card's details
+    function updateKooCardElement(koo) {
+        const kooCard = document.getElementById(`koo-${koo.id}`);
+        if (!kooCard) return;
+
+        const hasLiked = koo.likes && koo.likes.includes(currentLoggedInUserId);
+        const likeCount = koo.likes ? koo.likes.length : 0;
+        const rekooCount = koo.rekoos ? koo.rekoos.length : 0;
+        const hasRekooed = koo.rekoos && koo.rekoos.includes(currentLoggedInUserId);
+
+        const likeBtn = kooCard.querySelector('.koo-action-btn:nth-child(1)'); // First action button is like
+        const likeIcon = likeBtn.querySelector('i');
+        const likeCountSpan = kooCard.querySelector(`#like-count-${koo.id}`);
+
+        if (likeBtn) {
+            if (hasLiked) {
+                likeBtn.classList.add('liked');
+                likeIcon.classList.remove('far');
+                likeIcon.classList.add('fas');
+            } else {
+                likeBtn.classList.remove('liked');
+                likeIcon.classList.remove('fas');
+                likeIcon.classList.add('far');
+            }
+        }
+        if (likeCountSpan) {
+            likeCountSpan.textContent = likeCount;
+        }
+
+        const rekooBtn = kooCard.querySelector('.koo-action-btn:nth-child(3)'); // Third action button is rekoo
+        const rekooCountSpan = kooCard.querySelector(`#rekoo-count-${koo.id}`);
+
+        if (rekooBtn) {
+            if (hasRekooed) {
+                rekooBtn.classList.add('rekooed');
+            } else {
+                rekooBtn.classList.remove('rekooed');
+            }
+        }
+        if (rekooCountSpan) {
+            rekooCountSpan.textContent = rekooCount > 0 ? rekooCount : '';
+        }
+    }
+
 
     async function renderFeedFromAllKoos() {
         kooFeed.innerHTML = ''; // Clear existing Koos
@@ -747,8 +791,8 @@
         if (confirm("Are you sure you want to delete this Koo?")) {
             try {
                 await db.collection("koos").doc(kooId).delete();
-                alert("Koo deleted successfully!");
                 // The real-time listener will handle removing it from allKoosData and re-rendering
+                alert("Koo deleted successfully!");
             } catch (error) {
                 console.error("Error deleting Koo:", error);
                 alert("Failed to delete Koo. Please try again.");
@@ -774,11 +818,30 @@
             let likes = kooData.likes || [];
             const hasLiked = likes.includes(currentLoggedInUserId);
 
+            // Give immediate visual feedback (optimistic update)
+            const likeButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(1)`);
+            const likeIcon = likeButton.querySelector('i');
+            const likeCountSpan = document.querySelector(`#like-count-${kooId}`);
+
             if (hasLiked) {
+                // Optimistically remove like
+                likeButton.classList.remove('liked');
+                likeIcon.classList.remove('fas');
+                likeIcon.classList.add('far');
+                if (likeCountSpan) likeCountSpan.textContent = parseInt(likeCountSpan.textContent) - 1;
                 likes = likes.filter(uid => uid !== currentLoggedInUserId);
             } else {
+                // Optimistically add like
+                likeButton.classList.add('liked');
+                likeIcon.classList.remove('far');
+                likeIcon.classList.add('fas');
+                if (likeCountSpan) likeCountSpan.textContent = parseInt(likeCountSpan.textContent) + 1;
                 likes.push(currentLoggedInUserId);
-                // Add notification for the koo author
+            }
+            
+            await kooRef.update({ likes: likes });
+
+            if (!hasLiked) { // Only send notification if a new like was added
                 const kooAuthorId = kooData.userId;
                 if (kooAuthorId !== currentLoggedInUserId) { // Don't notify self
                     await db.collection('notifications').add({
@@ -791,13 +854,10 @@
                     });
                 }
             }
-
-            await kooRef.update({ likes: likes });
-
-            // UI update will now be handled by the real-time listener
+            // Real-time listener will correct/confirm state from Firestore
         } catch (error) {
             console.error("Error toggling like:", error);
-            // Removed: alert("Failed to update like status. Please try again.");
+            // If error, revert optimistic UI update if necessary, or just let the listener correct it
         }
     }
 
@@ -828,38 +888,43 @@
             let rekoos = kooData.rekoos || [];
             const hasRekooed = rekoos.includes(currentLoggedInUserId);
 
+            // Give immediate visual feedback (optimistic update)
+            const rekooButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(3)`);
+            const rekooCountSpan = document.querySelector(`#rekoo-count-${kooId}`);
+
             if (hasRekooed) {
-                alert("You've already rekooed this post. To simplify, we won't un-rekoo.");
-                return; 
+                // If already rekooed, just alert and return, no change to UI or DB
+                alert("You've already rekooed this post.");
+                return;
             } else {
+                // Optimistically add rekoo
+                rekooButton.classList.add('rekooed');
+                if (rekooCountSpan) rekooCountSpan.textContent = (parseInt(rekooCountSpan.textContent || '0') + 1) || '';
                 rekoos.push(currentLoggedInUserId);
-                // Add notification for the koo author
-                const kooAuthorId = kooData.userId;
-                if (kooAuthorId !== currentLoggedInUserId) { // Don't notify self
-                    await db.collection('notifications').add({
-                        recipientId: kooAuthorId,
-                        senderId: currentLoggedInUserId,
-                        type: 'rekoo',
-                        kooId: kooId,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        read: false
-                    });
-                }
             }
 
             await kooRef.update({ rekoos: rekoos });
-            alert("Koo rekooed!");
 
-            // UI update will now be handled by the real-time listener
-
+            // Add notification for the koo author
+            const kooAuthorId = kooData.userId;
+            if (kooAuthorId !== currentLoggedInUserId) { // Don't notify self
+                await db.collection('notifications').add({
+                    recipientId: kooAuthorId,
+                    senderId: currentLoggedInUserId,
+                    type: 'rekoo',
+                    kooId: kooId,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    read: false
+                });
+            }
+            // Real-time listener will correct/confirm state from Firestore
         } catch (error) {
             console.error("Error rekooing post:", error);
-            alert("Failed to rekoo post. Please try again.");
+            // If error, revert optimistic UI update if necessary, or just let the listener correct it
         }
     }
 
     // --- Real-time Koo Feed Listener ---
-    // Removed currentKooIds set as allKoosData will be the single source of truth
     let koosListenerUnsubscribe = null;
 
     function setupKoosListener() {
@@ -867,24 +932,56 @@
             koosListenerUnsubscribe(); // Unsubscribe from previous listener
         }
         koosListenerUnsubscribe = db.collection("koos").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+            if (!document.getElementById('feed').classList.contains('active')) {
+                // Only process changes if the 'feed' tab is active, to avoid re-rendering hidden content
+                return; 
+            }
+
+            // A flag to check if a full re-render is needed (e.g., first load, or many changes)
+            let needsFullRerender = false;
+            
             snapshot.docChanges().forEach(async (change) => {
                 const kooData = { ...change.doc.data(), id: change.doc.id };
 
                 if (change.type === "added") {
-                    allKoosData.unshift(kooData); // Add new Koos to the beginning
+                    // Prepend new Koo to local data
+                    allKoosData.unshift(kooData);
+                    // If a new Koo is added, we should typically re-render the whole feed to maintain order
+                    needsFullRerender = true; 
                 } else if (change.type === "modified") {
                     const index = allKoosData.findIndex(k => k.id === kooData.id);
                     if (index !== -1) {
-                        allKoosData[index] = kooData; // Update existing Koo
+                        allKoosData[index] = kooData; // Update local data
+                        // Update existing DOM element directly for performance
+                        updateKooCardElement(kooData);
                     }
                 } else if (change.type === "removed") {
-                    allKoosData = allKoosData.filter(k => k.id !== kooData.id); // Remove Koo
+                    // Remove Koo from local data
+                    allKoosData = allKoosData.filter(k => k.id !== kooData.id);
+                    // Remove from DOM
+                    const kooCardToRemove = document.getElementById(`koo-${kooData.id}`);
+                    if (kooCardToRemove) {
+                        kooCardToRemove.remove();
+                    }
+                    // If a Koo is removed, re-rendering might be safer to ensure order/messages
+                    needsFullRerender = true;
                 }
             });
-            // Re-render the feed only if the 'feed' tab is active
-            if (document.getElementById('feed').classList.contains('active')) {
+
+            // After processing all changes, decide if a full re-render is necessary
+            if (needsFullRerender || kooFeed.children.length === 0) { // Also re-render if feed is empty initially
                 renderFeedFromAllKoos();
+            } else {
+                 // If no full re-render, check and remove 'no koos' message if cards exist
+                const noKoosMsgElem = kooFeed.querySelector('.no-koos-message');
+                if (noKoosMsgElem && allKoosData.length > 0) {
+                    noKoosMsgElem.remove();
+                } else if (allKoosData.length === 0 && !noKoosMsgElem) {
+                     // If all koos are removed and message is not there, add it
+                     kooFeed.innerHTML = '<div class="no-koos-message">No Koos yet! Be the first to post.</div>';
+                }
             }
+            loadingMessage.style.display = 'none'; // Hide loading message after initial load/update
         }, (error) => {
             console.error("Error listening to Koos:", error);
             loadingMessage.style.display = 'none';
@@ -956,7 +1053,7 @@
             const targetUserData = targetUserDoc.data() || {};
 
             let currentUserFollowing = currentUserData.following || [];
-            let targetUserFollowers = targetUserData.followers || {}; // Changed to object for easier removal
+            let targetUserFollowers = targetUserData.followers || {}; 
 
             const isFollowing = currentUserFollowing.includes(targetUserId);
 
