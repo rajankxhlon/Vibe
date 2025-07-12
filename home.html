@@ -472,7 +472,7 @@
   <button class="koo-btn" onclick="window.location.href='create.html'">Koo +</button>
 
   <div class="footer">
-    <i class="fas fa-home" title="Home" onclick="window.location.href='home.html'"></i>
+    <i class="fas fa-home" title="Home" onclick="openTab(event, 'feed')"></i>
     <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
     <i class="fas fa-search" title="Search" onclick="window.location.href='search.html'"></i>
     <i class="fas fa-user-circle" title="Profile" onclick="window.location.href='profile.html'"></i>
@@ -1162,7 +1162,7 @@
     });
 
     // Footer Navigation (Unchanged)
-    document.querySelector('.footer .fa-home').onclick = () => window.location.href='home.html';
+    // The home icon's onclick is now openTab(event, 'feed')
     document.querySelector('.footer .fa-hashtag').onclick = () => window.location.href='trending.html';
     document.querySelector('.footer .fa-search').onclick = () => window.location.href='search.html';
     document.querySelector('.footer .fa-user-circle').onclick = () => window.location.href='profile.html';
