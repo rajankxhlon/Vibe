@@ -559,10 +559,19 @@
           }
       }
 
+      // Manage listeners based on active tab
       if (tabName === 'feed') {
-        fetchKoos();
+          // The Koo feed listener is always active (defined globally)
+          // Ensure current user profile listener is active to update follow buttons on posts
+          setupCurrentUserProfileListener();
+          if (allUsersListenerUnsubscribe) {
+              allUsersListenerUnsubscribe(); // Unsubscribe from people listener
+          }
       } else if (tabName === 'people') {
-        fetchPeople();
+          // Activate all users listener for the people tab
+          setupAllUsersListener();
+          // Ensure current user profile listener is active to update follow buttons on people cards
+          setupCurrentUserProfileListener();
       }
     }
 
@@ -754,19 +763,7 @@
 
             await kooRef.update({ likes: likes });
 
-            const likeButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(1)`);
-            const likeIcon = likeButton.querySelector('i');
-            const likeCountSpan = document.getElementById(`like-count-${kooId}`);
-
-            if (hasLiked) {
-                likeIcon.classList.remove('fas', 'liked');
-                likeIcon.classList.add('far');
-            } else {
-                likeIcon.classList.remove('far');
-                likeIcon.classList.add('fas', 'liked');
-            }
-            likeCountSpan.textContent = likes.length;
-
+            // UI update will now be handled by the real-time listener
         } catch (error) {
             console.error("Error toggling like:", error);
             // Removed: alert("Failed to update like status. Please try again.");
@@ -820,13 +817,9 @@
             }
 
             await kooRef.update({ rekoos: rekoos });
-
-            const rekooButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(3)`);
-            const rekooCountSpan = document.getElementById(`rekoo-count-${kooId}`);
-
-            rekooButton.classList.add('rekooed');
-            rekooCountSpan.textContent = rekoos.length > 0 ? rekoos.length : '';
             alert("Koo rekooed!");
+
+            // UI update will now be handled by the real-time listener
 
         } catch (error) {
             console.error("Error rekooing post:", error);
@@ -834,44 +827,14 @@
         }
     }
 
+    // --- Real-time Koo Feed Listener ---
+    const currentKooIds = new Set(); // To keep track of Koo IDs currently rendered
 
-    async function fetchKoos() {
-      loadingMessage.style.display = 'block';
-      kooFeed.innerHTML = ''; // Clear previous list items, keeps loading message visible
-
-      try {
-        const querySnapshot = await db.collection("koos").orderBy("timestamp", "desc").get(); // Order by timestamp
-        const koos = [];
-        querySnapshot.forEach(doc => {
-            koos.push({ ...doc.data(), id: doc.id });
-        });
-        
-        loadingMessage.style.display = 'none';
-
-        if (koos.length === 0) {
-          kooFeed.innerHTML = '<div class="no-koos-message">No Koos yet! Be the first to post.</div>';
-        } else {
-          for (const koo of koos) {
-              await renderKoo(koo);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching Koos:", error);
-        loadingMessage.style.display = 'none';
-        kooFeed.innerHTML = '<div class="no-koos-message">Failed to load Koos. Please try again.</div>';
-        alert("Failed to load Koos. Please try again.");
-      }
-    }
-
-    db.collection("koos").onSnapshot((snapshot) => {
+    db.collection("koos").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
         // Only update if the 'feed' tab is currently active to avoid unnecessary rendering
         if (!document.getElementById('feed').classList.contains('active')) {
             return; 
         }
-
-        // Keep track of Koo IDs currently rendered to avoid duplicates
-        const currentKooIds = new Set();
-        document.querySelectorAll('.koo-card').forEach(card => currentKooIds.add(card.id.replace('koo-', '')));
 
         snapshot.docChanges().forEach(async (change) => {
             const kooData = { ...change.doc.data(), id: change.doc.id };
@@ -888,14 +851,39 @@
                 }
             } else if (change.type === "modified") {
                 if (existingKooCard) {
-                    existingKooCard.remove(); // Remove old version
-                    currentKooIds.delete(kooData.id);
-                }
-                await renderKoo(kooData); // Render updated version
-                const updatedCard = document.getElementById(`koo-${kooData.id}`);
-                if (updatedCard) {
-                    kooFeed.prepend(updatedCard); // Add to top
-                    currentKooIds.add(kooData.id);
+                    // Update only dynamic parts like likes and rekoos directly for efficiency
+                    const likeCountSpan = existingKooCard.querySelector(`#like-count-${kooData.id}`);
+                    const rekooCountSpan = existingKooCard.querySelector(`#rekoo-count-${kooData.id}`);
+                    const likeButton = existingKooCard.querySelector(`.koo-action-btn:nth-child(1)`);
+                    const likeIcon = likeButton.querySelector('i');
+                    const rekooButton = existingKooCard.querySelector(`.koo-action-btn:nth-child(3)`);
+
+                    const hasLiked = kooData.likes && kooData.likes.includes(currentLoggedInUserId);
+                    const rekooCount = kooData.rekoos ? kooData.rekoos.length : 0;
+                    const likeCount = kooData.likes ? kooData.likes.length : 0;
+
+                    if (likeCountSpan) {
+                        likeCountSpan.textContent = likeCount;
+                        if (hasLiked) {
+                            likeIcon.classList.remove('far');
+                            likeIcon.classList.add('fas', 'liked');
+                        } else {
+                            likeIcon.classList.remove('fas', 'liked');
+                            likeIcon.classList.add('far');
+                        }
+                    }
+                    if (rekooCountSpan) {
+                        rekooCountSpan.textContent = rekooCount > 0 ? rekooCount : '';
+                        if (kooData.rekoos && kooData.rekoos.includes(currentLoggedInUserId)) {
+                            rekooButton.classList.add('rekooed');
+                        } else {
+                            rekooButton.classList.remove('rekooed');
+                        }
+                    }
+                    // For other changes (text, image, etc.), you might still want to re-render the whole card:
+                    // existingKooCard.remove();
+                    // await renderKoo(kooData);
+                    // kooFeed.prepend(document.getElementById(`koo-${kooData.id}`));
                 }
             } else if (change.type === "removed") {
                 if (existingKooCard) {
@@ -934,7 +922,7 @@
       
       // Exclude the currently logged-in user from the list
       if (user.id === currentUserId) {
-          return;
+          return null; // Return null if current user
       }
 
       const profilePicUrl = user.profilePicUrl ? user.profilePicUrl : null;
@@ -965,44 +953,46 @@
       followButton.addEventListener('click', () => toggleFollow(followButton, user.id));
 
       // Update the button's initial state
-      await updateFollowButton(followButton, user.id);
+      await updateFollowButtonState(followButton, user.id);
+      return personCard;
     }
 
-    async function fetchPeople() {
-        loadingPeopleMessage.style.display = 'block';
-        noPeopleMessage.style.display = 'none';
-        peopleListDiv.innerHTML = ''; // Clear previous list items, keep loading message
+    // This function is no longer directly called to *fetch* people, but used by the listener
+    // async function fetchPeople() {
+    //     loadingPeopleMessage.style.display = 'block';
+    //     noPeopleMessage.style.display = 'none';
+    //     peopleListDiv.innerHTML = ''; // Clear previous list items, keep loading message
 
-        try {
-            const usersSnapshot = await db.collection('users').get();
-            let allUsers = [];
-            usersSnapshot.forEach(doc => {
-                allUsers.push({ id: doc.id, ...doc.data() });
-            });
+    //     try {
+    //         const usersSnapshot = await db.collection('users').get();
+    //         let allUsers = [];
+    //         usersSnapshot.forEach(doc => {
+    //             allUsers.push({ id: doc.id, ...doc.data() });
+    //         });
 
-            // Filter out the currently logged-in user
-            allUsers = allUsers.filter(user => user.id !== currentLoggedInUserId);
+    //         // Filter out the currently logged-in user
+    //         allUsers = allUsers.filter(user => user.id !== currentLoggedInUserId);
 
-            // Sort users by follower count (descending)
-            allUsers.sort((a, b) => (b.followers ? b.followers.length : 0) - (a.followers ? a.followers.length : 0));
+    //         // Sort users by follower count (descending)
+    //         allUsers.sort((a, b) => (b.followers ? b.followers.length : 0) - (a.followers ? a.followers.length : 0));
 
-            loadingPeopleMessage.style.display = 'none';
+    //         loadingPeopleMessage.style.display = 'none';
 
-            if (allUsers.length === 0) {
-                noPeopleMessage.style.display = 'block'; // Show if no other users found
-            } else {
-                noPeopleMessage.style.display = 'none'; // Hide if users are found
-                for (const user of allUsers) {
-                    await renderPersonCard(user);
-                }
-            }
+    //         if (allUsers.length === 0) {
+    //             noPeopleMessage.style.display = 'block'; // Show if no other users found
+    //         } else {
+    //             noPeopleMessage.style.display = 'none'; // Hide if users are found
+    //             for (const user of allUsers) {
+    //                 await renderPersonCard(user);
+    //             }
+    //         }
 
-        } catch (error) {
-            console.error("Error fetching people:", error);
-            loadingPeopleMessage.style.display = 'none';
-            alert("Failed to load people. Please try again.");
-        }
-    }
+    //     } catch (error) {
+    //         console.error("Error fetching people:", error);
+    //         loadingPeopleMessage.style.display = 'none';
+    //         alert("Failed to load people. Please try again.");
+    //     }
+    // }
 
     async function toggleFollow(button, targetUserId) {
         const currentUser = auth.currentUser;
@@ -1052,27 +1042,18 @@
 
             await batch.commit();
 
-            await updateFollowButton(button, targetUserId); // Re-render button state
-            
-            // Update follower count displayed on the card
-            const followerCountSpan = button.closest('.person-card') ? button.closest('.person-card').querySelector('.person-followers') : null;
-            if (followerCountSpan) {
-                const updatedTargetUserDoc = await targetUserRef.get();
-                const updatedTargetUserData = updatedTargetUserDoc.data();
-                const newFollowerCount = updatedTargetUserData.followers ? updatedTargetUserData.followers.length : 0;
-                followerCountSpan.textContent = `${newFollowerCount} Followers`;
-            }
-
+            // UI update will now be handled by the real-time listeners
         } catch (error) {
             console.error("Error toggling follow status:", error);
             alert("Failed to update follow status. Please try again.");
         }
     }
 
-    async function updateFollowButton(button, targetUserId) {
+    async function updateFollowButtonState(button, targetUserId) {
         const currentUser = auth.currentUser;
         if (!currentUser) {
             button.textContent = "Follow";
+            button.classList.remove('following');
             button.disabled = true; // Disable if not logged in
             return;
         }
@@ -1089,6 +1070,153 @@
             button.classList.remove('following');
         }
         button.disabled = false; // Enable once state is determined
+    }
+
+
+    // --- Real-time Follow System Listeners ---
+    let currentUserProfileListenerUnsubscribe = null;
+    let allUsersListenerUnsubscribe = null;
+
+    // Listener for the current user's profile changes (for their 'following' list)
+    function setupCurrentUserProfileListener() {
+        if (currentUserProfileListenerUnsubscribe) {
+            currentUserProfileListenerUnsubscribe(); // Unsubscribe from previous listener
+        }
+
+        if (currentLoggedInUserId) {
+            currentUserProfileListenerUnsubscribe = db.collection('users').doc(currentLoggedInUserId)
+                .onSnapshot(async (doc) => {
+                    if (doc.exists) {
+                        const currentUserData = doc.data();
+                        const followingList = currentUserData.following || [];
+
+                        // Update follow buttons on all visible Koo cards
+                        document.querySelectorAll('.koo-follow-btn').forEach(button => {
+                            const targetUserId = button.dataset.userId;
+                            if (followingList.includes(targetUserId)) {
+                                button.textContent = "Following";
+                                button.classList.add('following');
+                            } else {
+                                button.textContent = "Follow";
+                                button.classList.remove('following');
+                            }
+                        });
+
+                        // Update follow buttons on all visible People cards (for the current user's following status)
+                        document.querySelectorAll('.person-card').forEach(async (card) => {
+                            const targetUserId = card.id.replace('user-', '');
+                            const followButton = card.querySelector('.follow-btn');
+                            if (followButton) {
+                                if (followingList.includes(targetUserId)) {
+                                    followButton.textContent = "Following";
+                                    followButton.classList.add('following');
+                                } else {
+                                    followButton.textContent = "Follow";
+                                    followButton.classList.remove('following');
+                                }
+                            }
+                            // Note: Follower count for people cards is updated by setupAllUsersListener
+                        });
+                    }
+                }, (error) => {
+                    console.error("Error listening to current user profile:", error);
+                });
+        }
+    }
+
+    // Listener for all user profiles (for the 'People' tab, to update follower counts and cards)
+    function setupAllUsersListener() {
+        if (allUsersListenerUnsubscribe) {
+            allUsersListenerUnsubscribe(); // Unsubscribe from previous listener
+        }
+
+        // Only set up this listener if the people tab is active
+        if (document.getElementById('people').classList.contains('active')) {
+            loadingPeopleMessage.style.display = 'block';
+            noPeopleMessage.style.display = 'none';
+            peopleListDiv.innerHTML = ''; // Clear previous list items, keep loading message
+
+            const initialUsersLoaded = new Set(); // To track users already rendered during initial load
+            const currentUsersOnDisplay = new Set(); // To track users currently in the DOM
+
+            allUsersListenerUnsubscribe = db.collection('users').onSnapshot(async (snapshot) => {
+                if (!document.getElementById('people').classList.contains('active')) {
+                    return; // Only update if the 'people' tab is active
+                }
+
+                // If this is the first time the listener fires or a significant change
+                // occurred (e.g., re-sorting or large batch update), clear and re-render.
+                // Otherwise, perform granular updates.
+                
+                // Collect existing user IDs in the DOM
+                peopleListDiv.querySelectorAll('.person-card').forEach(card => currentUsersOnDisplay.add(card.id.replace('user-', '')));
+
+
+                // Process changes
+                const usersToRender = [];
+                snapshot.docChanges().forEach((change) => {
+                    const userData = { ...change.doc.data(), id: change.doc.id };
+                    if (userData.id === currentLoggedInUserId) return; // Skip current user
+
+                    const existingPersonCard = document.getElementById(`user-${userData.id}`);
+
+                    if (change.type === "added") {
+                        if (!existingPersonCard && !initialUsersLoaded.has(userData.id)) {
+                             usersToRender.push(userData);
+                        }
+                    } else if (change.type === "modified") {
+                        if (existingPersonCard) {
+                            // Update only follower count and display name if changed
+                            const followerCountSpan = existingPersonCard.querySelector('.person-followers');
+                            const personNameSpan = existingPersonCard.querySelector('.person-name');
+
+                            if (followerCountSpan) {
+                                followerCountSpan.textContent = `${userData.followers ? userData.followers.length : 0} Followers`;
+                            }
+                            if (personNameSpan) {
+                                const displayUsername = userData.displayName || (userData.email ? userData.email.split('@')[0] : 'Unknown User');
+                                const isUserVerified = userData.isVerified === true;
+                                personNameSpan.innerHTML = `${displayUsername} ${isUserVerified ? verifiedBadgeSvg : ''}`;
+                            }
+                            // Re-evaluate follow button state (covered by setupCurrentUserProfileListener)
+                        } else {
+                            // If modified and not existing (e.g., user was just created or became public)
+                            usersToRender.push(userData);
+                        }
+                    } else if (change.type === "removed") {
+                        if (existingPersonCard) {
+                            existingPersonCard.remove();
+                            currentUsersOnDisplay.delete(userData.id);
+                        }
+                    }
+                });
+
+                // Render newly added or re-added (modified non-existing) users
+                for (const user of usersToRender) {
+                    const newCard = await renderPersonCard(user);
+                    if (newCard) {
+                        initialUsersLoaded.add(user.id);
+                    }
+                }
+                
+                loadingPeopleMessage.style.display = 'none';
+
+                // Handle no people message after all updates
+                const personCards = peopleListDiv.querySelectorAll('.person-card');
+                if (personCards.length === 0) {
+                    noPeopleMessage.style.display = 'block';
+                } else {
+                    noPeopleMessage.style.display = 'none';
+                }
+            }, (error) => {
+                console.error("Error listening to all users:", error);
+                loadingPeopleMessage.style.display = 'none';
+                alert("Failed to subscribe to user updates for people tab.");
+            });
+        } else {
+            // If tab is not 'people', ensure it's cleared and listener is off
+            peopleListDiv.innerHTML = '<div class="no-koos-message" id="loadingPeopleMessage">Loading People...</div><div class="no-koos-message" id="noPeopleMessage" style="display: none;">No other users found.</div>';
+        }
     }
 
 
@@ -1119,7 +1247,6 @@
     }
 
     // Real-time listener for notifications (to update badge)
-    // This listener should only be set up ONCE after currentLoggedInUserId is known.
     let notificationsListenerUnsubscribe = null; // To store the unsubscribe function
 
     function setupNotificationsListener() {
@@ -1154,21 +1281,20 @@
             currentUsernameSpan.insertAdjacentHTML('beforeend', verifiedBadgeSvg);
         }
 
-        // Call openTab without an event object, it will find the correct button
+        // Initialize with feed tab and setup relevant listeners
         openTab(null, 'feed'); 
         updateNotificationBadge(); // Initial badge check on load
         setupNotificationsListener(); // Setup the real-time notification listener
+        setupCurrentUserProfileListener(); // Setup listener for current user's profile changes (following)
       }
     });
 
     // Footer Navigation (Unchanged)
-    // The home icon's onclick is now openTab(event, 'feed')
     document.querySelector('.footer .fa-hashtag').onclick = () => window.location.href='trending.html';
     document.querySelector('.footer .fa-search').onclick = () => window.location.href='search.html';
     document.querySelector('.footer .fa-user-circle').onclick = () => window.location.href='profile.html';
 
     // Ensure initial tab is set if auth state is already determined
-    // This handles cases where user might already be logged in and page refreshes.
     document.addEventListener('DOMContentLoaded', () => {
         if (auth.currentUser) {
             openTab(null, 'feed');
