@@ -58,53 +58,80 @@
 
     .action-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start; /* Align items to the start (top) */
       justify-content: space-between;
       margin-bottom: 15px;
+      flex-wrap: wrap; /* Allow items to wrap on smaller screens if needed, though 'left-actions' will stack */
     }
 
     .left-actions {
         display: flex;
-        gap: 10px;
+        flex-direction: column; /* Stack items vertically */
+        gap: 10px; /* Space between stacked items */
+        width: 100%; /* Take full width to ensure stacking */
+        margin-bottom: 15px; /* Add space below if post button is on same row */
     }
 
-    .image-upload-wrapper, .hashtag-button-wrapper {
+    .media-upload-wrapper,
+    .hashtag-button-wrapper,
+    .language-button-wrapper {
       position: relative;
-      display: flex;
+      display: flex; /* Keep flex for icon and text alignment inside the button */
       align-items: center;
       cursor: pointer;
-      padding: 8px 12px;
+      padding: 10px 15px; /* Slightly more padding for better touch targets */
       border: 1px solid #ddd;
-      border-radius: 20px;
+      border-radius: 25px; /* More rounded */
       background-color: #f0f0f0;
-      font-size: 14px;
+      font-size: 15px; /* Slightly larger font */
       color: #555;
+      width: fit-content; /* Adjust width to content */
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Subtle shadow */
     }
 
-    .image-upload-wrapper:hover, .hashtag-button-wrapper:hover {
+    .media-upload-wrapper:hover,
+    .hashtag-button-wrapper:hover,
+    .language-button-wrapper:hover {
       background-color: #e0e0e0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Slightly more prominent shadow on hover */
     }
 
-    .image-upload-wrapper input[type="file"] {
+    .media-upload-wrapper input[type="file"] {
       display: none;
     }
 
-    .image-upload-wrapper i, .hashtag-button-wrapper i {
-      font-size: 18px;
+    .media-upload-wrapper i,
+    .hashtag-button-wrapper i,
+    .language-button-wrapper i {
+      font-size: 20px; /* Larger icons */
       color: #ffcc00;
-      margin-right: 8px;
+      margin-right: 10px; /* More space for icons */
+    }
+
+    .media-preview-container {
+        position: relative;
+        width: fit-content;
+        margin-top: 10px;
+        display: none; /* Hidden by default */
     }
 
     .image-preview {
       max-width: 100%;
-      max-height: 150px;
+      max-height: 200px;
       object-fit: contain;
       border-radius: 8px;
-      margin-top: 10px;
-      display: none;
+      display: block;
     }
 
-    .clear-image-btn {
+    .video-preview {
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .clear-media-btn {
       position: absolute;
       top: -5px;
       right: -5px;
@@ -112,30 +139,31 @@
       color: white;
       border: none;
       border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      font-size: 12px;
+      width: 24px;
+      height: 24px;
+      font-size: 14px;
       cursor: pointer;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       z-index: 10;
     }
 
     .post-button {
-      padding: 8px 18px;
+      padding: 10px 22px; /* Slightly larger padding */
       background: #ffcc00;
       color: #000;
       border: none;
-      border-radius: 20px;
+      border-radius: 25px; /* More rounded */
       font-weight: bold;
-      font-size: 16px;
+      font-size: 17px; /* Slightly larger font */
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      display: flex; /* For spinner alignment */
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px; /* Space between text and spinner */
+      gap: 8px; /* More space between text and spinner */
+      min-width: 120px; /* Ensure button has some consistent width */
     }
 
     .post-button:hover {
@@ -145,6 +173,7 @@
     .post-button:disabled {
         background-color: #ccc;
         cursor: not-allowed;
+        box-shadow: none;
     }
 
     /* Spinner animation */
@@ -153,8 +182,8 @@
         border: 3px solid rgba(0, 0, 0, 0.1);
         border-top: 3px solid #000;
         border-radius: 50%;
-        width: 16px;
-        height: 16px;
+        width: 18px; /* Slightly larger spinner */
+        height: 18px;
         animation: spin 1s linear infinite;
     }
 
@@ -162,48 +191,58 @@
         display: block;
     }
 
+    .post-button[data-state="uploading"] .post-text {
+        animation: pulseText 1.5s infinite;
+    }
+
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
 
-    /* Modern Hashtag Modal Styling */
+    @keyframes pulseText {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+
+    /* Modern Modal Styling (for Hashtag & Language) */
     .modal {
-      display: none; /* Hidden by default */
-      position: fixed; /* Stay in place */
-      z-index: 1000; /* High z-index to be on top of everything */
+      display: none;
+      position: fixed;
+      z-index: 1000;
       left: 0;
       top: 0;
-      width: 100%; /* Full width */
-      height: 100%; /* Full height */
-      background-color: rgba(0,0,0,0.6); /* Darker overlay */
-      display: flex; /* Use flex to center content */
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      display: flex;
       justify-content: center;
       align-items: center;
-      opacity: 0; /* Start hidden for animation */
-      transition: opacity 0.3s ease-out; /* Smooth fade-in */
-      pointer-events: none; /* Allow clicks through when invisible */
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+      pointer-events: none;
     }
 
     .modal.show {
         opacity: 1;
-        pointer-events: auto; /* Enable clicks when visible */
+        pointer-events: auto;
     }
 
     .modal-content {
       background-color: #fefefe;
       padding: 20px;
-      border-radius: 12px; /* More rounded corners */
-      width: 90%; /* Responsive width */
-      max-width: 350px; /* Max width for larger screens */
-      box-shadow: 0 8px 25px rgba(0,0,0,0.3); /* Deeper shadow */
-      transform: translateY(20px); /* Start slightly below for animation */
-      transition: transform 0.3s ease-out; /* Smooth slide-up */
-      box-sizing: border-box; /* Include padding in width */
+      border-radius: 12px;
+      width: 90%;
+      max-width: 350px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      transform: translateY(20px);
+      transition: transform 0.3s ease-out;
+      box-sizing: border-box;
     }
 
     .modal.show .modal-content {
-        transform: translateY(0); /* Slide up to final position */
+        transform: translateY(0);
     }
 
     .modal-header {
@@ -239,20 +278,18 @@
     .hashtag-input-group {
         display: flex;
         margin-bottom: 20px;
-        /* Ensure it takes full width of its parent minus padding */
         width: 100%;
-        box-sizing: border-box; /* Crucial for proper width calculation */
+        box-sizing: border-box;
     }
 
     .hashtag-input-group input {
-        flex-grow: 1; /* Allow input to grow and take available space */
+        flex-grow: 1;
         padding: 10px;
         border: 1px solid #ddd;
         border-radius: 6px 0 0 6px;
         font-size: 15px;
         outline: none;
-        /* Ensure its width is managed by flex-grow, not a fixed value */
-        min-width: 0; /* Prevents overflow from long placeholder text */
+        min-width: 0;
     }
 
     .hashtag-input-group input:focus {
@@ -261,7 +298,6 @@
     }
 
     .hashtag-input-group button {
-        /* Keep button styles as is, flex will handle sizing */
         padding: 10px 18px;
         background-color: #ffcc00;
         border: none;
@@ -270,7 +306,6 @@
         font-weight: bold;
         color: #000;
         font-size: 15px;
-        /* Ensure button shrinks appropriately if needed */
         flex-shrink: 0;
     }
 
@@ -278,11 +313,11 @@
         background-color: #ffdb4d;
     }
 
-    .trending-hashtags, .user-created-hashtags { /* Renamed class here */
+    .trending-hashtags, .user-created-hashtags {
         margin-bottom: 20px;
     }
 
-    .trending-hashtags h4, .user-created-hashtags h4 { /* Renamed class here */
+    .trending-hashtags h4, .user-created-hashtags h4 {
         margin-top: 0;
         margin-bottom: 12px;
         color: #666;
@@ -322,8 +357,47 @@
         background-color: #ccc;
         padding: 2px 6px;
         border-radius: 10px;
-        min-width: 15px; /* Ensure a minimum width */
+        min-width: 15px;
         text-align: center;
+    }
+
+    /* Language Selection Modal Specific Styles */
+    .language-option {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        font-size: 16px;
+        color: #333;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .language-option:hover {
+        background-color: #f9f9f9;
+    }
+
+    .language-option:last-child {
+        border-bottom: none;
+    }
+
+    /* Modern Yellow Theme for Selected Language Option */
+    .language-option.selected {
+        background-color: #ffcc00;
+        color: #000;
+        font-weight: bold;
+    }
+    .language-option.selected .check-icon {
+        color: #000;
+    }
+    .check-icon {
+        font-size: 18px;
+        color: #888;
+        display: none;
+    }
+    .language-option.selected .check-icon {
+        display: inline-block;
     }
 
 
@@ -362,25 +436,30 @@
 
     <div class="action-row">
       <div class="left-actions">
-          <label for="imageUpload" class="image-upload-wrapper">
+          <label for="mediaUpload" class="media-upload-wrapper">
             <i class="fas fa-camera"></i>
-            <span>Add Image</span>
-            <input type="file" id="imageUpload" accept="image/*">
+            <span>Add Media</span>
+            <input type="file" id="mediaUpload" accept="image/*,video/*">
           </label>
           <button class="hashtag-button-wrapper" onclick="openHashtagModal()">
               <i class="fas fa-hashtag"></i>
               <span>Hashtag</span>
           </button>
+          <button class="language-button-wrapper" onclick="openLanguageSelectionModal()">
+              <i class="fas fa-language"></i>
+              <span>Language</span>
+          </button>
       </div>
       <button class="post-button" id="postButton" onclick="postKoo()" data-state="post">
-          <span>Post</span>
+          <span class="post-text">Post</span>
           <div class="spinner"></div>
       </button>
     </div>
 
-    <div style="position: relative; width: fit-content; margin-top: 10px;">
-        <img id="imagePreview" class="image-preview" src="#" alt="Image Preview">
-        <button type="button" id="clearImageBtn" class="clear-image-btn"><i class="fas fa-times"></i></button>
+    <div id="mediaPreviewContainer" class="media-preview-container">
+        <img id="imagePreview" class="image-preview" src="#" alt="Media Preview">
+        <video id="videoPreview" class="video-preview" controls src="#"></video>
+        <button type="button" id="clearMediaBtn" class="clear-media-btn"><i class="fas fa-times"></i></button>
     </div>
   </div>
 
@@ -409,6 +488,17 @@
     </div>
   </div>
 
+  <div id="languageSelectionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Select Reel Language</h3>
+        <span class="close-button" onclick="closeLanguageSelectionModal()">&times;</span>
+      </div>
+      <div id="languageOptionsContainer">
+        </div>
+    </div>
+  </div>
+
   <div class="footer">
     <i class="fas fa-home" title="Home" onclick="window.location.href='home.html'"></i>
     <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
@@ -419,88 +509,162 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
   <script>
     // Firebase Config (use the same config as home.html)
     const firebaseConfig = {
       apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
       authDomain: "petpal-15621.firebaseapp.com",
       projectId: "petpal-15621",
-      storageBucket: "petpal-15621.appspot.com",
-      messagingSenderId: "YOUR_ID",
-      appId: "YOUR_ID"
+      storageBucket: "petpal-15621.appspot.com", // This is Firebase Storage Bucket, useful if you switch back
+      messagingSenderId: "251985816504",
+      appId: "1:251985816504:web:ae5b859a963026c8b5bd4d"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.firestore(); // Initialize Firestore
+    const db = firebase.firestore();
+    // const storage = firebase.storage(); // Only needed if you use Firebase Storage for uploads
 
-    // ImgBB API Key - REPLACE THIS WITH YOUR ACTUAL KEY
-    const IMGBB_API_KEY = "0ba537e52261b0060dd1bc0b926212b4"; // <<< REMEMBER TO REPLACE THIS!
+    // ImgBB API Key (for image uploads)
+    const IMGBB_API_KEY = "0ba537e52261b0060dd1bc0b926212b4";
+
+    // CLOUDINARY CONFIGURATION - RE-ADDED
+    const CLOUDINARY_CLOUD_NAME = "dywcxkoae"; // Replace with YOUR Cloudinary Cloud Name
+    const CLOUDINARY_UPLOAD_PRESET = "reels_upload"; // Replace with YOUR Cloudinary Upload Preset
 
     const kooTextarea = document.getElementById('kooText');
-    const imageUploadInput = document.getElementById('imageUpload');
+    const mediaUploadInput = document.getElementById('mediaUpload');
+    const mediaPreviewContainer = document.getElementById('mediaPreviewContainer');
     const imagePreview = document.getElementById('imagePreview');
-    const clearImageBtn = document.getElementById('clearImageBtn');
-    const postButton = document.getElementById('postButton'); // Get the post button
-    let uploadedImageUrl = null;
+    const videoPreview = document.getElementById('videoPreview');
+    const clearMediaBtn = document.getElementById('clearMediaBtn');
+    const postButton = document.getElementById('postButton');
+    const postButtonText = postButton.querySelector('.post-text'); // Get the span for text
+
+    let uploadedMediaFile = null; // Store the actual file for upload later
+    let uploadedMediaType = null; // 'image' or 'video'
+    let selectedReelLanguage = null; // To store the selected language for video uploads
 
     const hashtagModal = document.getElementById('hashtagModal');
     const customHashtagInput = document.getElementById('customHashtagInput');
     const popularHashtagList = document.getElementById('popularHashtagList');
-    const userHashtagList = document.getElementById('userHashtagList'); // This will now show ALL user-created hashtags
+    const userHashtagList = document.getElementById('userHashtagList');
+
+    const languageSelectionModal = document.getElementById('languageSelectionModal');
+    const languageOptionsContainer = document.getElementById('languageOptionsContainer');
 
     const defaultPopularHashtags = [
         "#DailyThoughts", "#GoodVibes", "#TechNews", "#Motivation", "#India"
     ];
 
-    // --- Image Upload & Preview Logic ---
-    imageUploadInput.addEventListener('change', function(event) {
+    // All supported languages (add more as needed)
+    const allLanguages = [
+        { code: 'en', name: 'English' },
+        { code: 'hi', name: 'Hindi (हिंदी)' },
+        { code: 'mr', name: 'Marathi (मराठी)' },
+        { code: 'bn', name: 'Bengali (বাংলা)' },
+        { code: 'ta', name: 'Tamil (தமிழ்)' },
+        { code: 'te', name: 'Telugu (తెలుగు)' },
+        { code: 'kn', name: 'Kannada (ಕನ್ನಡ)' },
+        { code: 'ml', name: 'Malayalam (മലയാളം)' },
+        { code: 'gu', name: 'Gujarati (ગુજરાતી)' },
+        { code: 'pa', name: 'Punjabi (ਪੰਜਾਬੀ)' }
+        // Add more Indian languages here
+    ];
+
+    // --- Media (Image/Video) Upload & Preview Logic ---
+    mediaUploadInput.addEventListener('change', function(event) {
       const file = event.target.files[0];
+      uploadedMediaFile = file; // Store the file for later upload
+
       if (file) {
+        const fileType = file.type;
+
+        // Hide both initially
+        imagePreview.style.display = 'none';
+        videoPreview.style.display = 'none';
+        mediaPreviewContainer.style.display = 'none';
+
         const reader = new FileReader();
         reader.onload = function(e) {
-          imagePreview.src = e.target.result;
-          imagePreview.style.display = 'block';
-          clearImageBtn.style.display = 'flex';
+          if (fileType.startsWith('image/')) {
+            imagePreview.src = e.target.result;
+            imagePreview.style.display = 'block';
+            uploadedMediaType = 'image';
+            selectedReelLanguage = null; // Reset language if changing from video to image
+          } else if (fileType.startsWith('video/')) {
+            videoPreview.src = e.target.result;
+            videoPreview.style.display = 'block';
+            uploadedMediaType = 'video';
+            // Automatically open language selection for videos
+            openLanguageSelectionModal();
+          }
+          mediaPreviewContainer.style.display = 'block';
+          clearMediaBtn.style.display = 'flex';
           updatePostButtonState();
         };
         reader.readAsDataURL(file);
       } else {
-        imagePreview.style.display = 'none';
-        imagePreview.src = '#';
-        clearImageBtn.style.display = 'none';
-        uploadedImageUrl = null;
-        updatePostButtonState();
+        clearMediaPreview();
       }
     });
 
-    clearImageBtn.addEventListener('click', function() {
-      imageUploadInput.value = '';
+    clearMediaBtn.addEventListener('click', function() {
+      clearMediaPreview();
+    });
+
+    function clearMediaPreview() {
+      mediaUploadInput.value = '';
+      uploadedMediaFile = null;
       imagePreview.style.display = 'none';
       imagePreview.src = '#';
-      clearImageBtn.style.display = 'none';
-      uploadedImageUrl = null;
+      videoPreview.style.display = 'none';
+      videoPreview.src = '#';
+      mediaPreviewContainer.style.display = 'none';
+      clearMediaBtn.style.display = 'none';
+      uploadedMediaType = null;
+      selectedReelLanguage = null; // Clear selected language when media is cleared
       updatePostButtonState();
-    });
+    }
 
     kooTextarea.addEventListener('input', updatePostButtonState);
 
     function updatePostButtonState() {
         const kooText = kooTextarea.value.trim();
-        const imageFile = imageUploadInput.files[0];
+        const mediaFileExists = uploadedMediaFile !== null;
 
-        if (kooText || imageFile) {
-            postButton.removeAttribute('disabled');
+        // Enable post button if there's text OR media
+        if (kooText || mediaFileExists) {
+            // Further disable if it's a video and language hasn't been selected
+            if (uploadedMediaType === 'video' && selectedReelLanguage === null) {
+                postButton.setAttribute('disabled', 'true');
+            } else {
+                postButton.removeAttribute('disabled');
+            }
         } else {
             postButton.setAttribute('disabled', 'true');
         }
     }
 
-    async function uploadImageToImgBB(file) {
+    // This function decides which upload service to use
+    async function uploadMedia(file) {
       if (!file) return null;
 
       setPostButtonState('uploading');
 
+      const fileType = file.type;
+
+      if (fileType.startsWith('image/')) {
+        return await uploadImageToImgBB(file);
+      } else if (fileType.startsWith('video/')) {
+        return await uploadVideoToCloudinary(file);
+      } else {
+        alert("Unsupported file type. Please upload an image or a video.");
+        return null;
+      }
+    }
+
+    // Function to upload images to ImgBB
+    async function uploadImageToImgBB(file) {
       const formData = new FormData();
       formData.append('image', file);
       try {
@@ -520,20 +684,44 @@
         console.error("Error uploading image to ImgBB:", error);
         alert("Error uploading image. Please try again.");
         return null;
-      } finally {
-        setPostButtonState('post'); // Revert to 'post' state after upload attempt
       }
+    }
+
+    // Function to upload videos to Cloudinary - RE-ADDED
+    async function uploadVideoToCloudinary(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (data.secure_url) {
+                return data.secure_url;
+            } else {
+                console.error("Cloudinary video upload failed:", data);
+                alert("Video upload failed. Please check Cloudinary configuration or file size.");
+                return null;
+            }
+        } catch (error) {
+            console.error("Error uploading video to Cloudinary:", error);
+            alert("Error uploading video. Please try again.");
+            return null;
+        }
     }
 
     function setPostButtonState(state) {
         if (state === 'uploading') {
             postButton.setAttribute('data-state', 'uploading');
-            postButton.querySelector('span').textContent = 'Uploading...';
-            postButton.setAttribute('disabled', 'true'); // Disable during upload
+            postButtonText.textContent = 'Posting...';
+            postButton.setAttribute('disabled', 'true');
         } else { // state === 'post'
             postButton.setAttribute('data-state', 'post');
-            postButton.querySelector('span').textContent = 'Post';
-            updatePostButtonState(); // Re-evaluate if it should be enabled based on text/image
+            postButtonText.textContent = 'Post';
+            updatePostButtonState();
         }
     }
 
@@ -542,7 +730,7 @@
     function openHashtagModal() {
         hashtagModal.style.display = 'flex';
         setTimeout(() => hashtagModal.classList.add('show'), 10);
-        loadHashtags(); // Load hashtags when modal opens
+        loadHashtags();
     }
 
     function closeHashtagModal() {
@@ -558,6 +746,9 @@
         if (event.target == hashtagModal) {
             closeHashtagModal();
         }
+        if (event.target == languageSelectionModal) {
+            closeLanguageSelectionModal();
+        }
     }
 
     function addCustomHashtag() {
@@ -566,7 +757,7 @@
             if (!hashtag.startsWith('#')) {
                 hashtag = '#' + hashtag;
             }
-            hashtag = hashtag.replace(/#+/g, '#'); // Ensure only one #
+            hashtag = hashtag.replace(/#+/g, '#');
 
             kooTextarea.value += ' ' + hashtag + ' ';
             closeHashtagModal();
@@ -574,26 +765,24 @@
     }
 
     function selectHashtag(element) {
-        const hashtag = element.dataset.hashtag; // Use data-hashtag attribute
+        const hashtag = element.dataset.hashtag;
         kooTextarea.value += ' ' + hashtag + ' ';
         closeHashtagModal();
     }
 
     async function loadHashtags() {
         popularHashtagList.innerHTML = '';
-        userHashtagList.innerHTML = ''; // Clear the "All User Hashtags" list
+        userHashtagList.innerHTML = '';
 
-        // Display default popular hashtags
         defaultPopularHashtags.forEach(tag => {
             const span = document.createElement('span');
             span.className = 'hashtag-tag';
             span.textContent = tag;
-            span.dataset.hashtag = tag; // Store clean hashtag in dataset
+            span.dataset.hashtag = tag;
             span.onclick = () => selectHashtag(span);
             popularHashtagList.appendChild(span);
         });
 
-        // Fetch all hashtags from Koos and count them
         try {
             const snapshot = await db.collection("koos").get();
             const hashtagCounts = {};
@@ -602,16 +791,14 @@
                 const koo = doc.data();
                 if (koo.hashtags && Array.isArray(koo.hashtags)) {
                     koo.hashtags.forEach(tag => {
-                        const cleanTag = tag.startsWith('#') ? tag : '#' + tag; // Ensure it starts with #
+                        const cleanTag = tag.startsWith('#') ? tag : '#' + tag;
                         hashtagCounts[cleanTag] = (hashtagCounts[cleanTag] || 0) + 1;
                     });
                 }
             });
 
-            // Sort hashtags by count (descending)
             const sortedHashtags = Object.entries(hashtagCounts).sort(([, countA], [, countB]) => countB - countA);
 
-            // Populate userHashtagList (now "All User Hashtags")
             if (sortedHashtags.length > 0) {
                 sortedHashtags.forEach(([hashtag, count]) => {
                     const span = document.createElement('span');
@@ -640,16 +827,65 @@
         }
     }
 
+    // --- Language Selection Modal Logic for Reels ---
+    function openLanguageSelectionModal() {
+        languageSelectionModal.style.display = 'flex';
+        setTimeout(() => languageSelectionModal.classList.add('show'), 10);
+        renderLanguageOptions();
+    }
+
+    function closeLanguageSelectionModal() {
+        languageSelectionModal.classList.remove('show');
+        languageSelectionModal.addEventListener('transitionend', function handler() {
+            languageSelectionModal.style.display = 'none';
+            languageSelectionModal.removeEventListener('transitionend', handler);
+        });
+    }
+
+    function renderLanguageOptions() {
+        languageOptionsContainer.innerHTML = '';
+        allLanguages.forEach(lang => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'language-option';
+            if (selectedReelLanguage === lang.code) {
+                optionDiv.classList.add('selected');
+            }
+            optionDiv.dataset.lang = lang.code;
+            optionDiv.innerHTML = `
+                <span>${lang.name}</span>
+                <i class="fas fa-check check-icon"></i>
+            `;
+            optionDiv.addEventListener('click', () => selectReelLanguage(lang.code));
+            languageOptionsContainer.appendChild(optionDiv);
+        });
+    }
+
+    function selectReelLanguage(langCode) {
+        selectedReelLanguage = langCode;
+        document.querySelectorAll('.language-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        document.querySelector(`.language-option[data-lang="${langCode}"]`).classList.add('selected');
+
+        closeLanguageSelectionModal();
+        updatePostButtonState();
+    }
+
 
     // --- Post Koo Logic ---
     async function postKoo() {
       const kooText = kooTextarea.value.trim();
-      const imageFile = imageUploadInput.files[0];
-      let imageUrl = null;
+      let mediaUrl = null;
+      let mediaType = uploadedMediaType;
 
-      if (!kooText && !imageFile) {
-        alert("Please enter some text or select an image to post.");
+      if (!kooText && !uploadedMediaFile) {
+        alert("Please enter some text or select an image/video to post.");
         return;
+      }
+
+      if (uploadedMediaType === 'video' && selectedReelLanguage === null) {
+          alert("Please select a language for your reel.");
+          return;
       }
 
       const user = auth.currentUser;
@@ -659,44 +895,41 @@
         return;
       }
 
-      setPostButtonState('uploading'); // Set button to uploading state
-
-      if (imageFile) {
-        imageUrl = await uploadImageToImgBB(imageFile);
-        if (!imageUrl) {
-          setPostButtonState('post'); // Revert state if image upload fails
+      if (uploadedMediaFile) {
+        mediaUrl = await uploadMedia(uploadedMediaFile);
+        if (!mediaUrl) {
+          setPostButtonState('post');
           return;
         }
       }
 
-      // Extract hashtags, ensuring they are lowercase and unique
-      const rawHashtags = (kooText.match(/#(\w+)/g) || []).map(tag => tag.toLowerCase().replace(/^#/, '')); // Remove '#' for storage if desired, but keep it for display
-      const uniqueHashtags = [...new Set(rawHashtags)].map(tag => '#' + tag); // Re-add '#' for consistency
+      const rawHashtags = (kooText.match(/#(\w+)/g) || []).map(tag => tag.toLowerCase().replace(/^#/, ''));
+      const uniqueHashtags = [...new Set(rawHashtags)].map(tag => '#' + tag);
 
       const newKoo = {
         userId: user.uid,
         username: user.displayName || user.email,
         text: kooText,
-        imageUrl: imageUrl,
-        hashtags: uniqueHashtags, // Store processed hashtags
+        mediaUrl: mediaUrl,
+        mediaType: mediaType,
+        hashtags: uniqueHashtags,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
+
+      if (mediaType === 'video' && selectedReelLanguage) {
+          newKoo.language = selectedReelLanguage;
+      }
 
       try {
         await db.collection("koos").add(newKoo);
         alert("Koo posted successfully!");
         kooTextarea.value = '';
-        imageUploadInput.value = '';
-        imagePreview.style.display = 'none';
-        imagePreview.src = '#';
-        clearImageBtn.style.display = 'none';
-        uploadedImageUrl = null;
-        updatePostButtonState(); // Re-evaluate post button state after clearing form
+        clearMediaPreview();
       } catch (error) {
         console.error("Error posting Koo:", error);
         alert("Failed to post Koo. Please try again.");
       } finally {
-        setPostButtonState('post'); // Always revert button state
+        setPostButtonState('post');
       }
     }
 
@@ -706,7 +939,7 @@
         alert("You are not logged in. Redirecting...");
         window.location.href = "index.html";
       } else {
-          updatePostButtonState(); // Initial check for button state on load
+          updatePostButtonState();
       }
     });
 
