@@ -210,6 +210,17 @@
       max-height: 300px; /* Limit image height */
     }
 
+    /* New style for video player */
+    .koo-video {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: block;
+      height: auto;
+      max-height: 300px; /* Consistent with image height */
+      background-color: #000; /* Black background for video player */
+    }
+
     .koo-actions {
       display: flex;
       justify-content: space-around; /* Distribute items evenly */
@@ -488,7 +499,8 @@
   <button class="koo-btn" onclick="window.location.href='create.html'">Koo +</button>
 
   <div class="footer">
-    <i class="fas fa-home" title="Home" onclick="shuffleAndRenderFeed()"></i> <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
+    <i class="fas fa-home" title="Home" onclick="shuffleAndRenderFeed()"></i>
+    <i class="fas fa-video" title="Reels" onclick="window.location.href='reels.html'"></i> <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
     <i class="fas fa-search" title="Search" onclick="window.location.href='search.html'"></i>
     <i class="fas fa-user-circle" title="Profile" onclick="window.location.href='profile.html'"></i>
   </div>
@@ -636,6 +648,35 @@
         }
     }
 
+    // --- Intersection Observer for Video Autoplay ---
+    let videoObserver;
+
+    function initializeVideoObserver() {
+        // Disconnect existing observer if any, to prevent duplicate observations
+        if (videoObserver) {
+            videoObserver.disconnect();
+        }
+
+        videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    // Video is in view, try to play it
+                    video.play().catch(error => {
+                        // Autoplay might be blocked by browser policies if not muted or user hasn't interacted.
+                        console.warn("Autoplay blocked:", error);
+                        // You could optionally show a manual play button here
+                    });
+                } else {
+                    // Video is out of view, pause it
+                    video.pause();
+                }
+            });
+        }, {
+            threshold: 0.5 // Trigger when 50% of the video is visible
+        });
+    }
+
     // --- Koo Feed Rendering Logic ---
     async function createKooCardElement(koo) {
       const userProfile = await getUserProfile(koo.userId);
@@ -678,6 +719,16 @@
           `;
       }
 
+      let mediaHtml = '';
+      if (koo.mediaUrl && koo.mediaType === 'image') {
+          mediaHtml = `<img src="${koo.mediaUrl}" alt="Koo Image" class="koo-image">`;
+      } else if (koo.mediaUrl && koo.mediaType === 'video') {
+          // Added 'muted' for autoplay and 'autoplay-video' class for the observer
+          mediaHtml = `<video src="${koo.mediaUrl}" controls muted class="koo-video autoplay-video"></video>`;
+      } else if (koo.imageUrl) { // Backward compatibility for older posts that only have imageUrl
+          mediaHtml = `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">`;
+      }
+
       kooCard.innerHTML = `
         <div class="koo-header">
           ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic" onclick="goToUserProfile('${koo.userId}')">` : `<div class="profile-initial" onclick="goToUserProfile('${koo.userId}')">${firstLetter}</div>`}
@@ -688,7 +739,7 @@
           ${headerActionHtml}
         </div>
         <p class="koo-text">${koo.text}</p>
-        ${koo.imageUrl ? `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">` : ''}
+        ${mediaHtml}
         <div class="koo-actions">
           <button class="koo-action-btn ${hasLiked ? 'liked' : ''}" onclick="toggleLike('${koo.id}')">
             <i class="${hasLiked ? 'fas' : 'far'} fa-heart"></i> <span id="like-count-${koo.id}">${likeCount}</span>
@@ -701,6 +752,13 @@
           </button>
         </div>
       `;
+
+      // Observe the video element if it exists in the newly created card
+      const videoElement = kooCard.querySelector('.autoplay-video');
+      if (videoElement && videoObserver) {
+          videoObserver.observe(videoElement);
+      }
+
       return kooCard;
     }
 
@@ -758,7 +816,12 @@
             return;
         }
 
-        // Render Koos one by one
+        // Before rendering, disconnect any existing observers to avoid issues with old elements
+        if (videoObserver) {
+            videoObserver.disconnect();
+        }
+
+        // Render Koos one by one and observe new video elements
         for (const koo of allKoosData) {
             const kooCardElement = await createKooCardElement(koo);
             kooFeed.appendChild(kooCardElement);
@@ -977,6 +1040,11 @@
                     // Remove from DOM
                     const kooCardToRemove = document.getElementById(`koo-${kooData.id}`);
                     if (kooCardToRemove) {
+                        // Before removing, if it's a video, disconnect it from the observer
+                        const videoElement = kooCardToRemove.querySelector('.autoplay-video');
+                        if (videoElement && videoObserver) {
+                            videoObserver.unobserve(videoElement);
+                        }
                         kooCardToRemove.remove();
                     }
                     // If a Koo is removed, re-rendering might be safer to ensure order/messages
@@ -1338,6 +1406,9 @@
             currentUsernameSpan.insertAdjacentHTML('beforeend', verifiedBadgeSvg);
         }
 
+        // Initialize the video observer here once the user is logged in
+        initializeVideoObserver();
+
         // Setup real-time listeners
         setupKoosListener(); // Start listening for Koos
         updateNotificationBadge(); // Initial badge check on load
@@ -1358,4 +1429,4 @@
   </script>
 
 </body>
-  </html>
+</html>
