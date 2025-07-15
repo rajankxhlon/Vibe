@@ -34,7 +34,7 @@
       text-align: center;
     }
 
-    .trending-container, .koo-detail-view {
+    .trending-container {
       padding: 20px;
       max-width: 600px;
       margin: 20px auto;
@@ -73,11 +73,11 @@
       display: flex;
       flex-direction: column;
       flex-grow: 1;
-      cursor: pointer; /* Make the info area clickable */
+      /* Removed cursor: pointer; here as it's no longer clickable */
       transition: color 0.2s ease;
     }
     .hashtag-info:hover .hashtag-name {
-        color: #ffcc00; /* Highlight on hover */
+        color: #000; /* No hover highlight if not clickable */
     }
 
     .hashtag-name {
@@ -113,163 +113,11 @@
       transform: translateY(-1px);
     }
 
-    .loading-message, .no-hashtags-message, .no-koos-for-hashtag-message {
+    .loading-message, .no-hashtags-message {
       text-align: center;
       padding: 40px;
       color: #777;
       font-style: italic;
-    }
-
-    /* Styles for displaying individual Koos (copied from home.html for consistency) */
-    .koos-for-hashtag {
-        padding-top: 15px;
-        display: flex;
-        flex-direction: column;
-        gap: 15px; /* Space between Koo cards */
-    }
-
-    .koo-card {
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 15px;
-      border: 1px solid #eee; /* Subtle border */
-      position: relative;
-    }
-
-    .koo-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-      position: relative;
-    }
-
-    .profile-pic {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-right: 10px;
-      border: 1px solid #ddd;
-    }
-
-    .profile-initial {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: #ffcc00;
-      color: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 18px;
-      font-weight: bold;
-      margin-right: 10px;
-      text-transform: uppercase;
-    }
-
-    .username {
-      font-weight: bold;
-      color: #333;
-      font-size: 15px;
-      display: flex;
-      align-items: center;
-    }
-
-    .koo-timestamp {
-        font-size: 12px;
-        color: #777;
-        margin-left: 8px;
-    }
-
-    .koo-text {
-      font-size: 15px;
-      color: #333;
-      line-height: 1.4;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      margin-bottom: 10px;
-    }
-
-    .koo-image {
-      max-width: 100%;
-      border-radius: 8px;
-      margin-top: 10px;
-      display: block;
-      height: auto;
-      object-fit: cover;
-      max-height: 300px;
-    }
-
-    .koo-actions {
-      display: flex;
-      justify-content: space-around;
-      padding-top: 10px;
-      border-top: 1px solid #eee;
-      margin-top: 10px;
-    }
-
-    .koo-action-btn {
-      background: none;
-      border: none;
-      color: #777;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 10px;
-      border-radius: 5px;
-    }
-
-    .koo-action-btn:hover {
-      background-color: #f0f0f0;
-    }
-
-    .koo-action-btn i {
-      font-size: 18px;
-    }
-    
-    .koo-action-btn.active, .koo-action-btn.liked {
-      color: #ff0000; /* Red for liked */
-    }
-    .koo-action-btn.rekooed {
-      color: #008000; /* Green for rekooed */
-    }
-
-    .verified-badge-small { /* For small badge in user display */
-        width: 16px;
-        height: 16px;
-        margin-left: 5px;
-        flex-shrink: 0;
-    }
-
-    /* Koo Detail View specific styles */
-    .koo-detail-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
-    }
-    .koo-detail-header h2 {
-        margin: 0;
-        font-size: 1.4em;
-        color: #000;
-    }
-    .back-btn {
-        background-color: #ddd;
-        color: #333;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 20px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-    .back-btn:hover {
-        background-color: #ccc;
     }
 
     /* Footer (unchanged from home.html) */
@@ -308,18 +156,6 @@
       </ul>
   </div>
 
-  <div class="koo-detail-view" id="kooDetailView" style="display: none;">
-    <div class="koo-detail-header">
-        <h2 id="kooDetailTitle"></h2>
-        <button class="back-btn" onclick="backToTrending()">Back to Trending</button>
-    </div>
-    <p class="loading-message" id="loadingKoosMessage">Loading Koos...</p>
-    <p class="no-koos-for-hashtag-message" id="noKoosForHashtagMessage" style="display: none;">No Koos found for this hashtag.</p>
-    <div class="koos-for-hashtag" id="koosForHashtagContainer">
-        </div>
-  </div>
-
-
   <div class="footer">
     <i class="fas fa-home" title="Home" onclick="window.location.href='home.html'"></i>
     <i class="fas fa-hashtag" title="Trending" onclick="window.location.href='trending.html'"></i>
@@ -334,14 +170,14 @@
   <script>
     // Firebase Config (Use your existing config)
      const firebaseConfig = {
-  apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
-  authDomain: "petpal-15621.firebaseapp.com",
-  projectId: "petpal-15621",
-  storageBucket: "petpal-15621.firebasestorage.app",
-  messagingSenderId: "251985816504",
-  appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
-  measurementId: "G-Z2ED9VCCZY"
-};
+      apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+      authDomain: "petpal-15621.firebaseapp.com",
+      projectId: "petpal-15621",
+      storageBucket: "petpal-15621.firebasestorage.app",
+      messagingSenderId: "251985816504",
+      appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
+      measurementId: "G-Z2ED9VCCZY"
+    };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -351,210 +187,8 @@
     const loadingMessage = document.getElementById('loadingMessage');
     const noHashtagsMessage = document.getElementById('noHashtagsMessage');
 
-    const kooDetailView = document.getElementById('kooDetailView');
-    const kooDetailTitle = document.getElementById('kooDetailTitle');
-    const loadingKoosMessage = document.getElementById('loadingKoosMessage');
-    const noKoosForHashtagMessage = document.getElementById('noKoosForHashtagMessage');
-    const koosForHashtagContainer = document.getElementById('koosForHashtagContainer');
-
     let currentLoggedInUserId = null; // Will be set by auth.onAuthStateChanged
 
-    // SVG for the verified badge (same as in home.html)
-    const verifiedBadgeSvg = `
-        <svg class="verified-badge-small" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
-            <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
-                <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
-                <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
-            </g>
-        </svg>
-    `;
-
-    // --- Utility Functions (Copied from home.html for consistency) ---
-    function formatTimestamp(timestamp) {
-      if (!timestamp) return '';
-      const date = timestamp.toDate();
-      const now = new Date();
-      const diff = now.getTime() - date.getTime();
-
-      const seconds = Math.floor(diff / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      const days = Math.floor(hours / 24);
-
-      if (seconds < 60) return `${seconds}s ago`;
-      if (minutes < 60) return `${minutes}m ago`;
-      if (hours < 24) return `${hours}h ago`;
-      if (days < 7) return `${days}d ago`;
-      
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-
-    async function getUserProfile(userId) {
-        try {
-            const userDoc = await db.collection('users').doc(userId).get();
-            if (userDoc.exists) {
-                return userDoc.data();
-            }
-            return null;
-        } catch (error) {
-            console.error("Error fetching user profile:", error);
-            return null;
-        }
-    }
-
-    // --- Koo Interaction Functions (Copied from home.html for consistency) ---
-    async function toggleLike(kooId) {
-        if (!currentLoggedInUserId) {
-            alert("You must be logged in to like posts.");
-            window.location.href = "index.html";
-            return;
-        }
-
-        const kooRef = db.collection('koos').doc(kooId);
-        try {
-            const doc = await kooRef.get();
-            if (!doc.exists) return;
-
-            const kooData = doc.data();
-            let likes = kooData.likes || [];
-            const hasLiked = likes.includes(currentLoggedInUserId);
-
-            if (hasLiked) {
-                likes = likes.filter(uid => uid !== currentLoggedInUserId);
-            } else {
-                likes.push(currentLoggedInUserId);
-            }
-
-            await kooRef.update({ likes: likes });
-
-            // Update UI directly for the specific Koo card
-            const likeButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(1)`);
-            const likeIcon = likeButton.querySelector('i');
-            const likeCountSpan = document.getElementById(`like-count-${kooId}`);
-
-            if (hasLiked) {
-                likeIcon.classList.remove('fas', 'liked');
-                likeIcon.classList.add('far');
-            } else {
-                likeIcon.classList.remove('far');
-                likeIcon.classList.add('fas', 'liked');
-            }
-            likeCountSpan.textContent = likes.length;
-
-        } catch (error) {
-            console.error("Error toggling like:", error);
-            alert("Failed to update like status. Please try again.");
-        }
-    }
-
-    function openComments(kooId) {
-        if (!currentLoggedInUserId) {
-            alert("You must be logged in to view comments.");
-            window.location.href = "index.html";
-            return;
-        }
-        window.location.href = `comments.html?kooId=${kooId}`;
-    }
-
-    async function rekooPost(kooId) {
-        if (!currentLoggedInUserId) {
-            alert("You must be logged in to rekoo posts.");
-            window.location.href = "index.html";
-            return;
-        }
-
-        const kooRef = db.collection('koos').doc(kooId);
-        try {
-            const doc = await kooRef.get();
-            if (!doc.exists) return;
-
-            const kooData = doc.data();
-            let rekoos = kooData.rekoos || [];
-            const hasRekooed = rekoos.includes(currentLoggedInUserId);
-
-            if (hasRekooed) {
-                alert("You've already rekooed this post. To simplify, we won't un-rekoo.");
-                return; 
-            } else {
-                rekoos.push(currentLoggedInUserId);
-            }
-
-            await kooRef.update({ rekoos: rekoos });
-
-            const rekooButton = document.querySelector(`#koo-${kooId} .koo-action-btn:nth-child(3)`);
-            const rekooCountSpan = document.getElementById(`rekoo-count-${kooId}`);
-
-            rekooButton.classList.add('rekooed');
-            rekooCountSpan.textContent = rekoos.length > 0 ? rekoos.length : '';
-            alert("Koo rekooed!");
-
-        } catch (error) {
-            console.error("Error rekooing post:", error);
-            alert("Failed to rekoo post. Please try again.");
-        }
-    }
-
-    // --- Rendering Functions ---
-
-    // Function to render a single Koo on this trending page's detail view
-    async function renderSingleKoo(koo, containerElement) {
-        const userProfile = await getUserProfile(koo.userId);
-        const profilePicUrl = userProfile && userProfile.profilePicUrl ? userProfile.profilePicUrl : null;
-        const displayUsername = userProfile && userProfile.displayName ? userProfile.displayName : (koo.username || 'Anonymous');
-        const isUserVerified = userProfile && userProfile.isVerified === true;
-        const firstLetter = displayUsername.charAt(0).toUpperCase();
-
-        const kooCard = document.createElement('div');
-        kooCard.className = 'koo-card';
-        kooCard.id = `koo-${koo.id}`; // Ensure unique ID
-
-        const hasLiked = koo.likes && koo.likes.includes(currentLoggedInUserId);
-        const rekooCount = koo.rekoos ? koo.rekoos.length : 0;
-        const likeCount = koo.likes ? koo.likes.length : 0;
-
-        kooCard.innerHTML = `
-            <div class="koo-header">
-                ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${firstLetter}</div>`}
-                <span class="username">
-                    ${displayUsername}
-                    ${isUserVerified ? verifiedBadgeSvg : ''}
-                </span>
-                <span class="koo-timestamp">${formatTimestamp(koo.timestamp)}</span>
-            </div>
-            <p class="koo-text">${koo.text}</p>
-            ${koo.imageUrl ? `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">` : ''}
-            <div class="koo-actions">
-                <button class="koo-action-btn ${hasLiked ? 'liked' : ''}" onclick="toggleLike('${koo.id}')">
-                    <i class="${hasLiked ? 'fas' : 'far'} fa-heart"></i> <span id="like-count-${koo.id}">${likeCount}</span>
-                </button>
-                <button class="koo-action-btn" onclick="openComments('${koo.id}')">
-                    <i class="far fa-comment"></i> Comment
-                </button>
-                <button class="koo-action-btn" onclick="rekooPost('${koo.id}')">
-                    <i class="fas fa-retweet"></i> <span id="rekoo-count-${koo.id}">${rekooCount > 0 ? rekooCount : ''}</span>
-                </button>
-            </div>
-        `;
-        containerElement.appendChild(kooCard);
-    }
-
-    // Function to render a single hashtag item in the trending list
-    function renderHashtag(hashtag, count) {
-      const hashtagItem = document.createElement('li');
-      hashtagItem.className = 'hashtag-item';
-      hashtagItem.innerHTML = `
-        <div class="hashtag-info" onclick="showKoosForHashtag('${hashtag}')">
-          <span class="hashtag-name">#${hashtag}</span>
-          <span class="hashtag-count">${count} Koos</span>
-        </div>
-        <button class="koo-plus-btn" onclick="kooWithHashtag('${hashtag}')">
-          Koo <i class="fas fa-plus"></i>
-        </button>
-      `;
-      hashtagList.appendChild(hashtagItem);
-    }
-
-    // --- Main Logic for Trending Hashtags ---
     async function fetchTrendingHashtags() {
       loadingMessage.style.display = 'block';
       noHashtagsMessage.style.display = 'none';
@@ -594,55 +228,25 @@
       }
     }
 
-    // --- Koo Detail View Logic ---
-
-    // Show Koos for a specific hashtag
-    async function showKoosForHashtag(hashtag) {
-        trendingContainer.style.display = 'none';
-        kooDetailView.style.display = 'block';
-        kooDetailTitle.textContent = `#${hashtag}`;
-        loadingKoosMessage.style.display = 'block';
-        noKoosForHashtagMessage.style.display = 'none';
-        koosForHashtagContainer.innerHTML = ''; // Clear previous Koos
-
-        try {
-            const querySnapshot = await db.collection("koos").get();
-            const filteredKoos = [];
-            const searchHashtag = `#${hashtag.toLowerCase()}`; // Ensure lowercase match
-
-            querySnapshot.forEach(doc => {
-                const koo = { ...doc.data(), id: doc.id };
-                if (koo.text && koo.text.toLowerCase().includes(searchHashtag)) {
-                    filteredKoos.push(koo);
-                }
-            });
-
-            // Sort filtered Koos by timestamp (newest first)
-            filteredKoos.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-
-
-            loadingKoosMessage.style.display = 'none';
-
-            if (filteredKoos.length === 0) {
-                noKoosForHashtagMessage.style.display = 'block';
-            } else {
-                for (const koo of filteredKoos) {
-                    await renderSingleKoo(koo, koosForHashtagContainer);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching Koos for hashtag:", error);
-            loadingKoosMessage.style.display = 'none';
-            alert("Failed to load Koos for this hashtag.");
-        }
+    // Function to render a single hashtag item in the trending list
+    function renderHashtag(hashtag, count) {
+      const hashtagItem = document.createElement('li');
+      hashtagItem.className = 'hashtag-item';
+      hashtagItem.innerHTML = `
+        <div class="hashtag-info"> <span class="hashtag-name">#${hashtag}</span>
+          <span class="hashtag-count">${count} Koos</span>
+        </div>
+        <button class="koo-plus-btn" onclick="kooWithHashtag('${hashtag}')">
+          Koo <i class="fas fa-plus"></i>
+        </button>
+      `;
+      hashtagList.appendChild(hashtagItem);
     }
 
-    // Go back to the trending hashtags list
-    function backToTrending() {
-        kooDetailView.style.display = 'none';
-        trendingContainer.style.display = 'block';
-        // Optionally re-fetch trending hashtags to ensure list is fresh
-        fetchTrendingHashtags();
+    // This function (showKoosForHashtag) is now effectively unused since the onclick handler was removed.
+    // You can remove it entirely if it's not used elsewhere.
+    function showKoosForHashtag(hashtag) {
+        window.location.href = `hashtag_koo.html?hashtag=${encodeURIComponent(hashtag)}`;
     }
 
     // Function to redirect to create.html with pre-filled hashtag
@@ -664,7 +268,6 @@
         } else {
             currentLoggedInUserId = null; // Ensure it's null if not logged in
         }
-        // Fetch trending hashtags regardless of login status
         fetchTrendingHashtags();
     });
 
