@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Koo Reels</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #000; /* Black background for reels */
+      color: #fff;
+      overflow: hidden; /* Prevent scrolling, as reels will manage their own scroll */
+      height: 100vh; /* Full viewport height */
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Permanent Header */
+    .header {
+      background-color: #000; /* Solid black background for permanent header */
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative; /* Relative position for standard flow */
+      width: 100%;
+      z-index: 10; /* Ensure it's above the video and reels content */
+      box-sizing: border-box; /* Include padding in width */
+      border-bottom: 1px solid #333; /* Subtle separation */
+    }
+
+    .header-left, .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .header .title {
+      margin: 0;
+      color: #fff;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .header-icon {
+      font-size: 22px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* Refresh Icon Animation */
+    .header-icon.spinning {
+        animation: spin 1s linear infinite; /* Spin for 1 second, linear, infinite */
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Drawer Menu */
+    .drawer-menu {
+      height: 100%;
+      width: 0; /* Initially closed */
+      position: fixed;
+      z-index: 20; /* Above header */
+      top: 0;
+      left: 0;
+      background-color: rgba(0,0,0,0.9); /* Semi-transparent dark background */
+      overflow-x: hidden;
+      transition: 0.5s;
+      padding-top: 60px; /* Space for close button/header if needed */
+      color: #fff;
+    }
+
+    .drawer-menu a, .drawer-menu-item { /* Apply styles to both anchor and div for consistency */
+      padding: 15px 25px;
+      text-decoration: none;
+      font-size: 20px;
+      color: #ccc;
+      display: block;
+      transition: 0.3s;
+    }
+
+    .drawer-menu a:hover, .drawer-menu-item:hover {
+      color: #f1f1f1;
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .drawer-menu .closebtn {
+      position: absolute;
+      top: 0;
+      right: 25px;
+      font-size: 36px;
+      margin-left: 50px;
+      color: #fff;
+    }
+
+    .drawer-menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer; /* Make the whole item clickable */
+    }
+
+    .drawer-menu-item label {
+        cursor: pointer;
+        flex-grow: 1; /* Allow label to take space */
+    }
+
+    .drawer-menu-item input[type="checkbox"] {
+        margin-left: 15px;
+        width: 20px;
+        height: 20px;
+        accent-color: #ffcc00; /* Koo's yellow color */
+    }
+
+
+    /* Reels Container */
+    .reels-container {
+      flex-grow: 1; /* Take up remaining space */
+      position: relative;
+      overflow-y: scroll; /* Enable vertical scrolling for reels */
+      scroll-snap-type: y mandatory; /* Snap to each reel */
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      height: calc(100vh - 60px); /* Adjust height to account for fixed header (approx 60px height) */
+    }
+
+    .reel-item {
+      width: 100%;
+      height: 100%; /* Each reel takes full reels-container height */
+      scroll-snap-align: start; /* Snap to the start of each reel item */
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end; /* Align content to the bottom */
+      position: relative;
+      background-color: #000; /* Fallback background */
+      overflow: hidden; /* Hide anything overflowing */
+    }
+
+    .reel-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Cover the entire area */
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1; /* Below content overlay */
+    }
+
+    .reel-content-overlay {
+      position: relative; /* Relative to reel-item */
+      z-index: 2; /* Above video */
+      padding: 20px;
+      padding-bottom: 20px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-end; /* Align items to the bottom */
+      height: 100%; /* Take full height to push content to bottom */
+      box-sizing: border-box; /* Include padding in height */
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 30%); /* Gradient for text readability */
+    }
+
+    .reel-user-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      flex-grow: 1; /* Allow user info to take space */
+      padding-right: 10px; /* Space from right actions */
+    }
+
+    .reel-username {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      color: #fff; /* White text for username */
+    }
+
+    .reel-description {
+      font-size: 14px;
+      color: #eee;
+      max-height: 80px; /* Limit description height */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 3; /* Show up to 3 lines */
+      -webkit-box-orient: vertical;
+    }
+
+    /* Right-side actions */
+    .reel-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin-left: 10px; /* Space from left content */
+    }
+
+    .reel-action-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column; /* Stack icon and text */
+      align-items: center;
+      gap: 5px;
+      opacity: 0.9;
+      transition: opacity 0.2s ease;
+    }
+
+    .reel-action-btn:hover {
+      opacity: 1;
+    }
+
+    .reel-action-btn i {
+      font-size: 24px;
+    }
+
+    .reel-action-btn.liked {
+      color: #ff0000; /* Red for liked */
+    }
+
+    /* Profile Pic & Rotating Disk */
+    .reel-profile-pic {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #fff; /* White border */
+      cursor: pointer;
+    }
+
+    .reel-profile-initial {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background-color: #ffcc00;
+      color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      border: 2px solid #fff;
+      cursor: pointer;
+    }
+
+    .rotating-disk {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: rgba(255,255,255,0.2); /* Semi-transparent white */
+      margin-top: 20px; /* Space below actions */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: rotate 6s linear infinite; /* Rotation animation */
+    }
+
+    .rotating-disk i {
+      font-size: 28px;
+      color: #fff;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Follow button on reels */
+    .reel-follow-btn {
+      background-color: #ffcc00;
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background-color 0.2s ease;
+      white-space: nowrap;
+      margin-left: 10px; /* Space from username */
+    }
+
+    .reel-follow-btn:hover {
+        background-color: #ffdb4d;
+    }
+    .reel-follow-btn.following {
+        background-color: #e0e0e0;
+        color: #555;
+    }
+
+    /* Post Options */
+    .post-options-container {
+        position: relative; /* For the menu positioning */
+    }
+
+    .options-btn {
+        background: none;
+        border: none;
+        font-size: 24px; /* Larger icon for visibility */
+        color: #fff;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        transition: background-color 0.2s ease;
+    }
+
+    .options-btn:hover {
+        background-color: rgba(255,255,255,0.2);
+    }
+
+    .options-menu {
+        position: absolute;
+        bottom: 40px; /* Position above the button */
+        right: 0;
+        background-color: rgba(0,0,0,0.8); /* Semi-transparent dark background */
+        border-radius: 8px; /* Corrected from 88px */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        z-index: 20;
+        display: none;
+        min-width: 120px;
+        overflow: hidden;
+    }
+
+    .options-menu.active {
+        display: block;
+    }
+
+    .options-menu button {
+        display: block;
+        width: 100%;
+        padding: 10px 15px;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+        color: #fff;
+        transition: background-color 0.2s ease;
+    }
+
+    .options-menu button:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+
+    /* No Reels Message & Loading */
+    .info-message {
+      text-align: center;
+      padding: 50px 20px;
+      color: #ccc;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 50px; /* Adjust as needed */
+    }
+
+    /* Verified Badge Styling - same as home.html */
+    .verified-badge {
+        width: 18px; /* Adjust size as needed */
+        height: 18px;
+        margin-left: 5px; /* Space from text */
+        flex-shrink: 0; /* Prevent it from shrinking */
+    }
+    .header .verified-badge {
+        width: 20px; /* Slightly larger for header */
+        height: 20px;
+    }
+
+    /* MODAL STYLES */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+        display: flex;
+        justify-content: center;
+        align-items: flex-start; /* Align to top */
+        z-index: 100; /* Above everything */
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        padding-top: 20px; /* Space from top */
+        box-sizing: border-box;
+    }
+
+    .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal-content {
+        background-color: #1a1a1a; /* Darker background for content */
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+        padding: 20px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal-content {
+        transform: translateY(0);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 22px;
+        color: #fff;
+    }
+
+    .modal-close-btn {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 30px;
+        cursor: pointer;
+    }
+
+    .modal-language-option {
+        background-color: rgba(255,255,255,0.1);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .modal-language-option:hover {
+        background-color: rgba(255,255,255,0.2);
+    }
+    .modal-language-option.selected {
+        background-color: #ffcc00;
+        color: #000;
+        font-weight: bold;
+    }
+    .modal-language-option.selected .check-icon {
+        color: #000;
+    }
+    .check-icon {
+        color: #ffcc00;
+        font-size: 20px;
+        margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="myDrawer" class="drawer-menu">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <div class="drawer-menu-item">
+        <label for="dataSaverToggle">Data Saver</label>
+        <input type="checkbox" id="dataSaverToggle">
+    </div>
+    <div class="drawer-menu-item" onclick="openContentLanguageSettings()">
+        Content Language
+    </div>
+    <a href="home.html">Home</a>
+    <a href="trending.html">Trending</a>
+    <a href="search.html">Search</a>
+    <a href="profile.html">Profile</a>
+  </div>
+
+  <div class="header">
+    <div class="header-left">
+        <i class="fas fa-bars header-icon" onclick="openNav()" title="Menu"></i>
+    </div>
+    <div class="header-right">
+        <i class="fas fa-redo-alt header-icon" id="refreshReels" title="Refresh Reels"></i>
+        <i class="fas fa-volume-mute header-icon" id="muteToggle" title="Mute/Unmute"></i>
+    </div>
+  </div>
+
+  <div class="reels-container" id="reelsContainer">
+    <div class="info-message" id="loadingReelsMessage">Loading Reels...</div>
+    <div class="info-message" id="noReelsMessage" style="display: none;">No Reels available.</div>
+  </div>
+
+  <div id="contentLanguageModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Content Language</h2>
+        <button class="modal-close-btn" onclick="closeContentLanguageModal()">&times;</button>
+      </div>
+      <div id="contentLanguageOptions">
+        </div>
+    </div>
+  </div>
+
+  <div id="changeReelLanguageModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Change Reel Language</h2>
+        <button class="modal-close-btn" onclick="closeChangeReelLanguageModal()">&times;</button>
+      </div>
+      <div id="singleReelLanguageOptions">
+        </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase Config (same as home.html)
+    // !! IMPORTANT: In a real application, keep your Firebase config secure.
+    // Do not expose API keys directly in public client-side code if they grant
+    // excessive permissions. Use Firebase Security Rules to control access.
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
+      authDomain: "petpal-15621.firebaseapp.com",
+      projectId: "petpal-15621",
+      storageBucket: "petpal-15621.firebaseastorage.app",
+      messagingSenderId: "251985816504",
+      appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
+      measurementId: "G-Z2ED9VCCZY"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const reelsContainer = document.getElementById('reelsContainer');
+    const loadingReelsMessage = document.getElementById('loadingReelsMessage');
+    const noReelsMessage = document.getElementById('noReelsMessage');
+    const muteToggleButton = document.getElementById('muteToggle');
+    const refreshReelsButton = document.getElementById('refreshReels'); 
+    const dataSaverToggle = document.getElementById('dataSaverToggle');
+
+    const contentLanguageModal = document.getElementById('contentLanguageModal');
+    const contentLanguageOptionsContainer = document.getElementById('contentLanguageOptions');
+    const changeReelLanguageModal = document.getElementById('changeReelLanguageModal');
+    const singleReelLanguageOptionsContainer = document.getElementById('singleReelLanguageOptions');
+
+    let currentLoggedInUserId = null;
+    let allReels = []; // Store all fetched reel data
+    let currentVideoPlaying = null;
+    let isMuted = true; // Initial state: muted
+
+    // Initialize isDataSaverOn from localStorage, default to false if not found
+    let isDataSaverOn = localStorage.getItem('dataSaverOn') === 'true'; 
+    // Initialize contentLanguage from localStorage, default to 'all'
+    let contentLanguage = localStorage.getItem('contentLanguage') || 'all';
+
+    // Store unsubscribe functions for real-time listeners on individual reels
+    const reelListeners = {}; 
+
+    // Define a constant for the number of reels to fetch at once
+    const REELS_TO_FETCH_COUNT = 10; 
+    // Define a threshold to refetch reels if the count drops significantly due to deletions
+    const REFETCH_THRESHOLD = REELS_TO_FETCH_COUNT / 2;
+
+    // Variable to hold the ID of the reel being edited for language
+    let editingReelId = null; 
+
+    // All supported languages (add more as needed)
+    const allLanguages = [
+        { code: 'all', name: 'All Languages' },
+        { code: 'en', name: 'English' },
+        { code: 'hi', name: 'Hindi (हिंदी)' },
+        { code: 'mr', name: 'Marathi (मराठी)' },
+        { code: 'bn', name: 'Bengali (বাংলা)' },
+        { code: 'ta', name: 'Tamil (தமிழ்)' },
+        { code: 'te', name: 'Telugu (తెలుగు)' },
+        { code: 'kn', name: 'Kannada (ಕನ್ನಡ)' },
+        { code: 'ml', name: 'Malayalam (മലയാളം)' },
+        { code: 'gu', name: 'Gujarati (ગુજરાતી)' },
+        { code: 'pa', name: 'Punjabi (ਪੰਜਾਬੀ)' }
+        // Add more Indian languages here
+    ];
+
+    // SVG for the verified badge (same as home.html)
+    const verifiedBadgeSvg = `
+        <svg class="verified-badge" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
+            <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                <path d="M 30.091 10.131 L 30.091 10.131 c 5.28 -13.046 23.695 -13.207 29.202 -0.255 l 0 0 l 0 0 c 12.959 -5.491 26.093 7.416 20.829 20.469 l 0 0 l 0 0 c 13.046 5.28 13.207 23.695 0.255 29.202 l 0 0 l 0 0 c 5.491 12.959 -7.416 26.093 -20.469 20.829 l 0 0 l 0 0 c -5.28 13.046 -23.695 13.207 -29.202 0.255 l 0 0 l 0 0 C 17.748 86.122 4.613 73.215 9.878 60.162 l 0 0 l 0 0 C -3.169 54.881 -3.33 36.467 9.623 30.96 l 0 0 l 0 0 C 4.131 18.001 17.038 4.866 30.091 10.131 L 30.091 10.131 z" style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round"/>
+                <polygon points="39.66,63.79 23.36,47.76 28.97,42.05 39.3,52.21 59.6,29.58 65.56,34.93 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+            </g>
+        </svg>
+    `;
+
+    // --- Utility Functions ---
+
+    /**
+     * Fetches a user's profile from Firestore.
+     * @param {string} userId - The ID of the user to fetch.
+     * @returns {Promise<Object|null>} The user profile data or null if not found/error.
+     */
+    async function getUserProfile(userId) {
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                return { id: userDoc.id, ...userDoc.data() };
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Redirects to the user profile page.
+     * @param {string} userId - The ID of the user whose profile to view.
+     */
+    function goToUserProfile(userId) {
+        window.location.href = `user_profile.html?userId=${userId}`;
+    }
+
+    /**
+     * Formats a number for display (e.g., 12000 -> 12K).
+     * @param {number} num - The number to format.
+     * @returns {string|number} The formatted string or original number.
+     */
+    function formatNumber(num) {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        }
+        if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num;
+    }
+
+    /**
+     * Shuffles an array in place using the Fisher-Yates (Knuth) algorithm.
+     * @param {Array} array - The array to shuffle.
+     * @returns {Array} The shuffled array.
+     */
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // --- Drawer Menu Functions ---
+
+    function openNav() {
+      document.getElementById("myDrawer").style.width = "250px"; // Adjust width as needed
+    }
+
+    function closeNav() {
+      document.getElementById("myDrawer").style.width = "0";
+    }
+
+    // --- Data Saver Logic ---
+
+    // Set the initial state of the toggle checkbox based on localStorage
+    dataSaverToggle.checked = isDataSaverOn;
+
+    dataSaverToggle.addEventListener('change', (event) => {
+        isDataSaverOn = event.target.checked;
+        // Save the state to localStorage
+        localStorage.setItem('dataSaverOn', isDataSaverOn);
+        console.log("Data Saver is now:", isDataSaverOn ? "ON" : "OFF");
+        // Re-render reels to apply quality change
+        renderReels(); 
+    });
+
+    // --- Content Language Modal Functions ---
+
+    function openContentLanguageSettings() {
+        closeNav(); // Close the drawer
+        renderContentLanguageOptions(); // Render options when opening
+        contentLanguageModal.classList.add('active');
+    }
+
+    function closeContentLanguageModal() {
+        contentLanguageModal.classList.remove('active');
+    }
+
+    /**
+     * Renders language options for content filtering.
+     */
+    function renderContentLanguageOptions() {
+        contentLanguageOptionsContainer.innerHTML = '';
+        allLanguages.forEach(lang => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'modal-language-option';
+            optionDiv.dataset.lang = lang.code;
+            optionDiv.innerHTML = `
+                ${lang.name}
+                <i class="fas fa-check check-icon" style="display: none;"></i>
+            `;
+            if (lang.code === contentLanguage) {
+                optionDiv.classList.add('selected');
+                optionDiv.querySelector('.check-icon').style.display = 'inline-block';
+            }
+            optionDiv.addEventListener('click', () => selectContentLanguage(lang.code));
+            contentLanguageOptionsContainer.appendChild(optionDiv);
+        });
+    }
+
+    /**
+     * Updates the content language preference and re-fetches reels.
+     * @param {string} selectedLangCode - The selected language code.
+     */
+    async function selectContentLanguage(selectedLangCode) {
+        localStorage.setItem('contentLanguage', selectedLangCode);
+        contentLanguage = selectedLangCode;
+        renderContentLanguageOptions(); // Update UI
+        closeContentLanguageModal(); // Close modal
+        alert(`Content language set to ${allLanguages.find(l => l.code === selectedLangCode).name}. Refreshing reels...`);
+        await fetchAndRenderRandomReels(); // Re-fetch and render reels with new filter
+    }
+
+    // --- Change Reel Language Modal Functions ---
+
+    async function changeReelLanguage(reelId) {
+        editingReelId = reelId; // Store the ID of the reel being edited
+        closeNav(); // Close any drawer menu
+        document.querySelectorAll('.options-menu').forEach(menu => menu.classList.remove('active')); // Close post options menu
+
+        try {
+            const reelDoc = await db.collection('koos').doc(reelId).get();
+            if (reelDoc.exists) {
+                const currentReelLanguage = reelDoc.data().language || 'en'; // Default to English if not set
+                renderSingleReelLanguageOptions(currentReelLanguage);
+                changeReelLanguageModal.classList.add('active');
+            } else {
+                alert("Reel not found.");
+            }
+        } catch (error) {
+            console.error("Error fetching reel for language change:", error);
+            alert("Failed to load reel details for language change.");
+        }
+    }
+
+    function closeChangeReelLanguageModal() {
+        changeReelLanguageModal.classList.remove('active');
+        editingReelId = null; // Clear the editing reel ID
+    }
+
+    /**
+     * Renders language options for a specific reel.
+     * @param {string} currentLangCode - The current language code of the reel.
+     */
+    function renderSingleReelLanguageOptions(currentLangCode) {
+        singleReelLanguageOptionsContainer.innerHTML = '';
+        // Filter out 'All Languages' option for individual reel setting
+        const selectableLanguages = allLanguages.filter(lang => lang.code !== 'all'); 
+
+        selectableLanguages.forEach(lang => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'modal-language-option';
+            optionDiv.dataset.lang = lang.code;
+            optionDiv.innerHTML = `
+                ${lang.name}
+                <i class="fas fa-check check-icon" style="display: none;"></i>
+            `;
+            if (lang.code === currentLangCode) {
+                optionDiv.classList.add('selected');
+                optionDiv.querySelector('.check-icon').style.display = 'inline-block';
+            }
+            optionDiv.addEventListener('click', () => selectSingleReelLanguage(lang.code));
+            singleReelLanguageOptionsContainer.appendChild(optionDiv);
+        });
+    }
+
+    /**
+     * Updates the language of a specific reel in Firestore.
+     * @param {string} selectedLangCode - The selected language code.
+     */
+    async function selectSingleReelLanguage(selectedLangCode) {
+        if (!editingReelId) {
+            alert("No reel selected for language change.");
+            return;
+        }
+
+        try {
+            await db.collection('koos').doc(editingReelId).update({ language: selectedLangCode });
+            alert(`Reel language updated to ${allLanguages.find(l => l.code === selectedLangCode).name}.`);
+            closeChangeReelLanguageModal(); // Close modal
+            // Optionally, re-fetch and re-render reels to reflect changes, though not strictly necessary
+            // since this is an edit on an existing reel.
+        } catch (error) {
+            console.error("Error updating reel language:", error);
+            alert("Failed to update reel language. Please try again.");
+        }
+    }
+
+
+    // --- Reels Rendering Logic ---
+
+    /**
+     * Creates and returns a DOM element for a single reel item.
+     * @param {Object} reel - The reel data object.
+     * @returns {Promise<HTMLElement>} The created reel item element.
+     */
+    async function createReelItemElement(reel) {
+      const userProfile = await getUserProfile(reel.userId);
+      const profilePicUrl = userProfile && userProfile.profilePicUrl ? userProfile.profilePicUrl : null;
+      const displayUsername = userProfile && userProfile.displayName ? userProfile.displayName : (reel.username || 'Anonymous');
+      const isUserVerified = userProfile && userProfile.isVerified === true;
+      const firstLetter = displayUsername.charAt(0).toUpperCase();
+
+      const reelItem = document.createElement('div');
+      reelItem.className = 'reel-item';
+      reelItem.id = `reel-${reel.id}`;
+
+      const hasLiked = reel.likes && reel.likes.includes(currentLoggedInUserId);
+      const likeCount = reel.likes ? reel.likes.length : 0;
+      const commentCount = reel.commentIds ? reel.commentIds.length : 0; // Assuming commentIds array in reel
+
+      const isMyReel = (reel.userId === currentLoggedInUserId);
+      let followButtonHtml = '';
+      
+      // Always show options button, but content varies based on ownership
+      let optionsButtonHtml = `
+          <div class="post-options-container">
+              <button class="options-btn" onclick="togglePostOptions(this, '${reel.id}', ${isMyReel})"><i class="fas fa-ellipsis-h"></i></button>
+              <div class="options-menu" id="options-menu-${reel.id}">
+                  ${isMyReel ? `
+                      <button onclick="editReel('${reel.id}')">Edit Reel</button>
+                      <button onclick="changeReelLanguage('${reel.id}')">Change Language</button>
+                      <button onclick="deleteReel('${reel.id}')">Delete Reel</button>
+                  ` : `
+                      <button onclick="reportReel('${reel.id}')">Report Reel</button>
+                  `}
+              </div>
+          </div>
+      `;
+
+      if (!isMyReel) {
+          // The follow button will have its state updated by the currentUserProfileListener
+          followButtonHtml = `
+              <button class="reel-follow-btn" data-user-id="${reel.userId}" onclick="toggleFollow(this, '${reel.userId}')">
+                  Follow
+              </button>
+          `;
+      }
+
+      // Determine video source based on data saver state
+      // Use 'mediaUrl' as default, 'lowQualityMediaUrl' if data saver is on AND it exists.
+      const videoSource = (isDataSaverOn && reel.lowQualityMediaUrl) ? reel.lowQualityMediaUrl : reel.mediaUrl;
+      const preloadAttribute = 'auto'; // Will change dynamically based on visibility
+
+      reelItem.innerHTML = `
+        <video src="${videoSource}" class="reel-video" loop muted playsinline preload="${preloadAttribute}"></video>
+        <div class="reel-content-overlay">
+            <div class="reel-user-info">
+                <span class="reel-username" onclick="goToUserProfile('${reel.userId}')">
+                    ${displayUsername}
+                    ${isUserVerified ? verifiedBadgeSvg : ''}
+                    ${!isMyReel ? followButtonHtml : ''}
+                </span>
+                <p class="reel-description">${reel.text}</p>
+            </div>
+            <div class="reel-actions">
+                ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="reel-profile-pic" onclick="goToUserProfile('${reel.userId}')">` : `<div class="reel-profile-initial" onclick="goToUserProfile('${reel.userId}')">${firstLetter}</div>`}
+                <button class="reel-action-btn ${hasLiked ? 'liked' : ''}" onclick="toggleLike('${reel.id}')">
+                    <i class="${hasLiked ? 'fas' : 'far'} fa-heart"></i>
+                    <span>${formatNumber(likeCount)}</span>
+                </button>
+                <button class="reel-action-btn" onclick="openComments('${reel.id}')">
+                    <i class="far fa-comment"></i>
+                    ${commentCount > 0 ? `<span>${formatNumber(commentCount)}</span>` : ''} 
+                </button>
+                ${optionsButtonHtml}
+                <div class="rotating-disk">
+                    <i class="fas fa-music"></i>
+                </div>
+            </div>
+        </div>
+      `;
+
+      // Attach real-time listener for this specific reel's data
+      setupSingleReelListener(reel.id);
+
+      // Add error handling for video loading
+      const videoElement = reelItem.querySelector('.reel-video');
+      videoElement.onerror = () => {
+          console.error(`Error loading video for reel ID: ${reel.id}. Source: ${videoSource}`);
+          videoElement.closest('.reel-item').innerHTML = '<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; background-color: #333; color: #fff; text-align: center;">Video failed to load.<br/> <small>ID: ' + reel.id + '</small></div>';
+      };
+
+      return reelItem;
+    }
+
+    /**
+     * Updates an existing Reel item's details (e.g., like count, comment count) in the DOM.
+     * This function is called by the real-time listener for individual reels.
+     * @param {Object} reelData - The updated reel data.
+     */
+    function updateReelItemElement(reelData) {
+        const reelItem = document.getElementById(`reel-${reelData.id}`);
+        if (!reelItem) return;
+
+        const hasLiked = reelData.likes && reelData.likes.includes(currentLoggedInUserId);
+        const likeCount = reelData.likes ? reelData.likes.length : 0;
+        const commentCount = reelData.commentIds ? reelData.commentIds.length : 0; // Use commentIds for count
+
+        const likeBtn = reelItem.querySelector('.reel-action-btn:nth-child(2)'); 
+        const likeIcon = likeBtn ? likeBtn.querySelector('i') : null;
+        const likeCountSpan = likeBtn ? likeBtn.querySelector('span') : null;
+
+        if (likeBtn && likeIcon && likeCountSpan) {
+            if (hasLiked) {
+                likeBtn.classList.add('liked');
+                likeIcon.classList.remove('far');
+                likeIcon.classList.add('fas');
+            } else {
+                likeBtn.classList.remove('liked');
+                likeIcon.classList.remove('fas');
+                likeIcon.classList.add('far');
+            }
+            likeCountSpan.textContent = formatNumber(likeCount);
+        }
+
+        const commentBtn = reelItem.querySelector('.reel-action-btn:nth-child(3)'); 
+        let commentCountSpan = commentBtn ? commentBtn.querySelector('span') : null;
+        
+        if (commentCount > 0) {
+            if (!commentCountSpan) { // If span doesn't exist, create it
+                commentCountSpan = document.createElement('span');
+                commentBtn.appendChild(commentCountSpan);
+            }
+            commentCountSpan.textContent = formatNumber(commentCount);
+        } else {
+            if (commentCountSpan) { // If span exists, remove it
+                commentCountSpan.remove();
+            }
+        }
+        // Follow button state is handled by setupCurrentUserProfileListener, not here.
+    }
+
+    /**
+     * Renders all reels currently stored in the `allReels` array into the DOM.
+     * Clears existing reels and re-creates them.
+     */
+    async function renderReels() {
+        loadingReelsMessage.style.display = 'block';
+        noReelsMessage.style.display = 'none';
+        
+        // Unsubscribe all previous individual reel listeners before clearing DOM
+        Object.values(reelListeners).forEach(unsubscribe => unsubscribe());
+        Object.keys(reelListeners).forEach(key => delete reelListeners[key]); // Clear the object
+        
+        reelsContainer.innerHTML = ''; // Clear existing reels from DOM
+        preloadedVideos.clear(); // Clear preloaded video cache on refresh
+
+        if (allReels.length === 0) {
+            noReelsMessage.style.display = 'block';
+            loadingReelsMessage.style.display = 'none';
+            return;
+        }
+
+        for (const reel of allReels) {
+            const reelItemElement = await createReelItemElement(reel);
+            reelsContainer.appendChild(reelItemElement);
+        }
+
+        loadingReelsMessage.style.display = 'none';
+        
+        // No direct call to playVisibleVideo here. IntersectionObserver will handle it.
+        // We will call `initiateVideoPreloading()` instead.
+        initiateVideoPreloading();
+        // Setup listener for current user's profile to update follow buttons
+        setupCurrentUserProfileListener(); 
+    }
+
+    // --- Video Autoplay, Mute & Preloading Logic ---
+    let intersectionObserver;
+    const preloadedVideos = new Set(); // To keep track of videos already preloaded
+
+    /**
+     * Initiates preloading for videos that are currently in view or about to be in view.
+     */
+    function initiateVideoPreloading() {
+        // Disconnect existing observer to re-observe all new videos (important after re-rendering)
+        if (intersectionObserver) {
+            intersectionObserver.disconnect();
+        }
+        initializeIntersectionObserver(); // Re-initialize to ensure all videos are observed
+
+        const reelItems = document.querySelectorAll('.reel-item');
+        reelItems.forEach((reelItem, index) => {
+            const video = reelItem.querySelector('.reel-video');
+            if (video) {
+                // Observe all videos
+                intersectionObserver.observe(reelItem); 
+
+                // Preload current, previous, and next videos
+                // The main current video will be handled by IntersectionObserver
+                // We proactively preload adjacent ones
+                if (index > 0) { // Previous video
+                    const prevVideo = reelItems[index - 1].querySelector('.reel-video');
+                    if (prevVideo && !preloadedVideos.has(prevVideo.src)) {
+                        prevVideo.preload = 'auto'; // Ensure preloading is set
+                        prevVideo.load(); // Request to load the video data
+                        preloadedVideos.add(prevVideo.src);
+                        // console.log('Preloading previous:', prevVideo.src);
+                    }
+                }
+                if (index < reelItems.length - 1) { // Next video
+                    const nextVideo = reelItems[index + 1].querySelector('.reel-video');
+                    if (nextVideo && !preloadedVideos.has(nextVideo.src)) {
+                            nextVideo.preload = 'auto';
+                            nextVideo.load();
+                            preloadedVideos.add(nextVideo.src);
+                            // console.log('Preloading next:', nextVideo.src);
+                    }
+                }
+            }
+        });
+    }
+
+
+    /**
+     * Initializes the Intersection Observer to control video playback and preloading.
+     * Pauses videos that scroll out of view and plays the one mostly in view.
+     * Manages `preload` attribute for visible vs. non-visible videos.
+     */
+    function initializeIntersectionObserver() {
+        intersectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target.querySelector('.reel-video'); // Get video element from the observed reel-item
+                if (!video) return;
+
+                if (entry.isIntersecting) {
+                    // This is the currently visible video
+                    if (currentVideoPlaying && currentVideoPlaying !== video) {
+                        currentVideoPlaying.pause();
+                        currentVideoPlaying.currentTime = 0; // Reset video to start
+                        // Stop preloading for previously playing video if it was the current one
+                        if (currentVideoPlaying.preload !== 'none') {
+                           // currentVideoPlaying.preload = 'none'; // Optional: stop preloading immediately
+                        }
+                    }
+                    video.muted = isMuted; // Apply global mute state
+                    video.preload = 'auto'; // Ensure it's set for active loading
+                    video.play().catch(error => {
+                        // Autoplay blocked by browser or other error
+                        if (error.name === "NotAllowedError" || error.name === "AbortError") {
+                            console.warn("Autoplay blocked or user gesture required:", error.message);
+                            // Show a "Tap to play" icon/message
+                            // You might add a play icon overlay here
+                        } else {
+                            console.error("Error playing video:", error);
+                        }
+                    });
+                    currentVideoPlaying = video;
+                    
+                    // console.log('Playing:', video.src);
+
+                    // Proactively load next and previous videos
+                    const reelItems = Array.from(document.querySelectorAll('.reel-item'));
+                    const currentIndex = reelItems.indexOf(entry.target);
+                    
+                    if (currentIndex > 0) { // Preload previous
+                        const prevVideo = reelItems[currentIndex - 1].querySelector('.reel-video');
+                        if (prevVideo && !preloadedVideos.has(prevVideo.src)) {
+                            prevVideo.preload = 'auto';
+                            prevVideo.load();
+                            preloadedVideos.add(prevVideo.src);
+                            // console.log('Preloading previous:', prevVideo.src);
+                        }
+                    }
+                    if (currentIndex < reelItems.length - 1) { // Preload next
+                        const nextVideo = reelItems[currentIndex + 1].querySelector('.reel-video');
+                        if (nextVideo && !preloadedVideos.has(nextVideo.src)) {
+                            nextVideo.preload = 'auto';
+                            nextVideo.load();
+                            preloadedVideos.add(nextVideo.src);
+                            // console.log('Preloading next:', nextVideo.src);
+                        }
+                    }
+
+                } else {
+                    // Video is out of view
+                    if (video === currentVideoPlaying) {
+                        video.pause();
+                        video.currentTime = 0; // Reset video to start when leaving view
+                        currentVideoPlaying = null;
+                    }
+                    // Stop aggressive preloading for videos that are far away
+                    // Setting preload to 'none' helps browsers manage resources,
+                    // but be careful not to make it too aggressive if users scroll back quickly.
+                    // video.preload = 'none'; 
+                    // console.log('Pausing and stopping preload for:', video.src);
+                }
+            });
+        }, {
+            threshold: 0.8 // Trigger when 80% of the reel-item is visible
+        });
+    }
+    
+    // Event listener for the global mute toggle button in the header
+    muteToggleButton.addEventListener('click', () => {
+        isMuted = !isMuted;
+        muteToggleButton.classList.toggle('fa-volume-mute', isMuted);
+        muteToggleButton.classList.toggle('fa-volume-up', !isMuted);
+
+        if (currentVideoPlaying) {
+            currentVideoPlaying.muted = isMuted;
+        }
+    });
+
+    // --- Post Options / Edit / Delete / Report ---
+
+    /**
+     * Toggles the visibility of the post options menu for a given reel.
+     * @param {HTMLElement} button - The options button that was clicked.
+     * @param {string} reelId - The ID of the reel.
+     * @param {boolean} isMyReel - True if the reel belongs to the current user.
+     */
+    function togglePostOptions(button, reelId, isMyReel) {
+        const menu = document.getElementById(`options-menu-${reelId}`);
+        // Close other open menus
+        document.querySelectorAll('.options-menu.active').forEach(openMenu => {
+            if (openMenu.id !== `options-menu-${reelId}`) {
+                openMenu.classList.remove('active');
+            }
+        });
+        menu.classList.toggle('active');
+
+        // Close menu if clicking outside of it or its button
+        document.addEventListener('click', function closeMenu(event) {
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.classList.remove('active');
+                document.removeEventListener('click', closeMenu); // Remove this listener once done
+            }
+        });
+    }
+
+    function editReel(reelId) {
+        alert(`Functionality to edit reel with ID: ${reelId} would go here.`);
+        document.getElementById(`options-menu-${reelId}`).classList.remove('active');
+    }
+
+
+    /**
+     * Deletes a reel from Firestore and removes it from the DOM.
+     * @param {string} reelId - The ID of the reel to delete.
+     */
+    async function deleteReel(reelId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to delete reels.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        if (confirm("Are you sure you want to delete this Reel permanently? This action cannot be undone.")) {
+            try {
+                // Delete the reel document from the 'koos' collection
+                await db.collection("koos").doc(reelId).delete(); 
+                
+                // Unsubscribe the listener for the deleted reel
+                if (reelListeners[reelId]) {
+                    reelListeners[reelId]();
+                    delete reelListeners[reelId];
+                }
+
+                // Remove the reel element from the DOM
+                const reelElement = document.getElementById(`reel-${reelId}`);
+                if (reelElement) {
+                    reelElement.remove();
+                }
+
+                alert("Reel deleted successfully!");
+
+                // Check if the number of displayed reels drops below threshold, then fetch more
+                if (reelsContainer.children.length < REFETCH_THRESHOLD) {
+                    console.log("Reel count dropped below threshold, fetching more reels...");
+                    fetchAndRenderRandomReels();
+                }
+
+            } catch (error) {
+                console.error("Error deleting Reel:", error);
+                alert("Failed to delete Reel. Please try again.");
+            }
+        }
+        document.getElementById(`options-menu-${reelId}`).classList.remove('active');
+    }
+
+    /**
+     * Reports a reel.
+     * @param {string} reelId - The ID of the reel to report.
+     */
+    function reportReel(reelId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to report content.");
+            window.location.href = "index.html";
+            return;
+        }
+        if (confirm("Are you sure you want to report this Reel for inappropriate content? Our team will review it.")) {
+            // In a real app, you would save this report to a 'reports' collection in Firestore
+            // e.g., db.collection('reports').add({ reelId, reportedBy: currentLoggedInUserId, timestamp: ... });
+            console.log(`Reel ${reelId} reported by user ${currentLoggedInUserId}`);
+            alert("Reel reported successfully. We will review it shortly.");
+        }
+        document.getElementById(`options-menu-${reelId}`).classList.remove('active');
+    }
+
+
+    // --- Like/Unlike Functionality ---
+
+    /**
+     * Toggles the like status for a reel.
+     * @param {string} reelId - The ID of the reel to like/unlike.
+     */
+    async function toggleLike(reelId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to like reels.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        // Reference to the reel document in the 'koos' collection
+        const reelRef = db.collection('koos').doc(reelId); 
+        try {
+            const doc = await reelRef.get();
+            if (!doc.exists) {
+                console.warn(`Reel with ID ${reelId} does not exist.`);
+                return;
+            }
+
+            const reelData = doc.data();
+            let likes = reelData.likes || [];
+            const hasLiked = likes.includes(currentLoggedInUserId);
+            
+            if (hasLiked) {
+                // If already liked, remove the like
+                likes = likes.filter(uid => uid !== currentLoggedInUserId);
+            } else {
+                // If not liked, add the like
+                likes.push(currentLoggedInUserId);
+            }
+            
+            // Update the likes array in Firestore
+            await reelRef.update({ likes: likes });
+
+            // If the user just liked the reel and it's not their own, send a notification
+            if (!hasLiked) { 
+                const reelAuthorId = reelData.userId;
+                if (reelAuthorId !== currentLoggedInUserId) {
+                    await db.collection('notifications').add({
+                        recipientId: reelAuthorId,
+                        senderId: currentLoggedInUserId,
+                        type: 'like',
+                        reelId: reelId, // Use 'reelId' for clarity
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        read: false
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Error toggling like:", error);
+            alert("Failed to update like status. Please try again.");
+        }
+    }
+
+    // --- Comments Navigation ---
+
+    /**
+     * Redirects to the comments page for a specific reel.
+     * @param {string} reelId - The ID of the reel for which to open comments.
+     */
+    function openComments(reelId) {
+        if (!currentLoggedInUserId) {
+            alert("You must be logged in to view comments.");
+            window.location.href = "index.html";
+            return;
+        }
+        window.location.href = `comments.html?kooId=${reelId}`; // Using kooId as that's what comments.html expects
+    }
+
+    // --- Follow/Unfollow Functionality (Same as home.html) ---
+
+    /**
+     * Toggles the follow status for a target user.
+     * @param {HTMLElement} button - The follow button element.
+     * @param {string} targetUserId - The ID of the user to follow/unfollow.
+     */
+    async function toggleFollow(button, targetUserId) {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            alert("You must be logged in to follow users.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        const currentUserRef = db.collection('users').doc(currentUser.uid);
+        const targetUserRef = db.collection('users').doc(targetUserId);
+
+        try {
+            const [currentUserDoc, targetUserDoc] = await Promise.all([
+                currentUserRef.get(),
+                targetUserRef.get()
+            ]);
+
+            const currentUserData = currentUserDoc.data() || {};
+            // const targetUserData = targetUserDoc.data() || {}; // Not directly used in this logic
+
+            let currentUserFollowing = currentUserData.following || [];
+            // targetUser's followers list is updated via arrayUnion/Remove
+
+            const isFollowing = currentUserFollowing.includes(targetUserId);
+
+            const batch = db.batch();
+
+            if (isFollowing) {
+                // Unfollow: Remove target user from current user's 'following' list
+                batch.update(currentUserRef, { following: firebase.firestore.FieldValue.arrayRemove(targetUserId) });
+                // Unfollow: Remove current user from target user's 'followers' list
+                batch.update(targetUserRef, { followers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
+            } else {
+                // Follow: Add target user to current user's 'following' list
+                batch.update(currentUserRef, { following: firebase.firestore.FieldValue.arrayUnion(targetUserId) });
+                // Follow: Add current user to target user's 'followers' list
+                batch.update(targetUserRef, { followers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
+
+                // Add follower notification for the target user
+                await db.collection('notifications').add({
+                    recipientId: targetUserId,
+                    senderId: currentUser.uid,
+                    type: 'follow',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    read: false
+                });
+            }
+
+            await batch.commit();
+            // UI update for the follow button is handled by setupCurrentUserProfileListener
+        } catch (error) {
+                console.error("Error toggling follow status:", error);
+            alert("Failed to update follow status. Please try again.");
+        }
+    }
+
+    // --- Real-time Reels Listener (MODIFIED FOR RANDOMNESS + SINGLE REEL LISTENERS + LANGUAGE FILTER) ---
+
+    /**
+     * Fetches a random selection of video reels from Firestore and renders them,
+     * applying a language filter if `contentLanguage` is not 'all'.
+     */
+    async function fetchAndRenderRandomReels() {
+        loadingReelsMessage.style.display = 'block';
+        noReelsMessage.style.display = 'none';
+        
+        // Unsubscribe all previous individual reel listeners when fetching a new set
+        Object.values(reelListeners).forEach(unsubscribe => unsubscribe());
+        Object.keys(reelListeners).forEach(key => delete reelListeners[key]); // Clear the object
+        
+        reelsContainer.innerHTML = ''; // Clear existing reels from DOM
+        preloadedVideos.clear(); // Clear preloaded video cache on refresh
+
+        try {
+            let query = db.collection("koos").where("mediaType", "==", "video");
+
+            if (contentLanguage !== 'all') {
+                query = query.where("language", "==", contentLanguage);
+            }
+
+            const allReelsSnapshot = await query.get();
+            
+            let allReelIds = [];
+            allReelsSnapshot.forEach(doc => {
+                allReelIds.push(doc.id);
+            });
+
+            if (allReelIds.length === 0) {
+                noReelsMessage.style.display = 'block';
+                noReelsMessage.textContent = contentLanguage !== 'all' 
+                    ? `No Reels available in ${allLanguages.find(l => l.code === contentLanguage).name}.`
+                    : 'No Reels available.';
+                loadingReelsMessage.style.display = 'none';
+                return;
+            }
+
+            // Shuffle all available reel IDs to get a random order
+            shuffleArray(allReelIds);
+            // Select a subset of IDs to display (e.g., the first 10)
+            const selectedReelIds = allReelIds.slice(0, REELS_TO_FETCH_COUNT);
+
+            // Fetch the full data for the selected random reels
+            const randomReelsPromises = selectedReelIds.map(id => db.collection("koos").doc(id).get());
+            const randomReelDocs = await Promise.all(randomReelsPromises);
+
+            allReels = []; 
+            randomReelDocs.forEach(doc => {
+                if (doc.exists) {
+                    allReels.push({ ...doc.data(), id: doc.id });
+                }
+            });
+            
+            // Shuffle the complete reel objects again to ensure true randomness in display order
+            shuffleArray(allReels); 
+
+            await renderReels(); // Render the fetched reels
+
+        } catch (error) {
+            console.error("Error fetching random Reels:", error);
+            noReelsMessage.style.display = 'block';
+            noReelsMessage.textContent = 'Failed to load Reels. Please try again.';
+        } finally {
+            loadingReelsMessage.style.display = 'none';
+        }
+    }
+
+    /**
+     * Sets up a real-time Firestore listener for a single reel document.
+     * This keeps the reel's UI (likes, comments) updated in real-time.
+     * If the reel is deleted from Firestore, its element is removed from the DOM.
+     * @param {string} reelId - The ID of the reel to listen to.
+     */
+    function setupSingleReelListener(reelId) {
+        // Ensure only one listener per reel
+        if (reelListeners[reelId]) {
+            reelListeners[reelId](); // Unsubscribe existing listener if any
+        }
+
+        const unsubscribe = db.collection('koos').doc(reelId).onSnapshot(doc => {
+            if (doc.exists) {
+                const updatedReelData = { ...doc.data(), id: doc.id };
+                // Update the UI for this specific reel
+                updateReelItemElement(updatedReelData);
+            } else {
+                // Reel was deleted from Firestore, remove it from UI
+                console.log(`Reel ${reelId} was deleted from Firestore. Removing from UI.`);
+                const reelElement = document.getElementById(`reel-${reelId}`);
+                if (reelElement) {
+                    reelElement.remove();
+                }
+                // Also remove its listener
+                if (reelListeners[reelId]) {
+                    reelListeners[reelId]();
+                    delete reelListeners[reelId];
+                }
+                // If the number of current reels drops significantly, fetch more
+                if (reelsContainer.children.length < REFETCH_THRESHOLD) {
+                    console.log("Current reel count low, fetching more random reels.");
+                    fetchAndRenderRandomReels();
+                }
+            }
+        }, error => {
+            console.error(`Error listening to reel ${reelId}:`, error);
+        });
+
+        reelListeners[reelId] = unsubscribe; // Store the unsubscribe function
+    }
+
+
+    // --- Real-time Follow System Listener (for current user's following list) ---
+    let currentUserProfileListenerUnsubscribe = null;
+
+    /**
+     * Sets up a real-time Firestore listener for the current logged-in user's profile.
+     * Specifically, it listens to changes in the 'following' list and updates
+     * the follow buttons on all displayed reels accordingly.
+     */
+    function setupCurrentUserProfileListener() {
+        if (currentUserProfileListenerUnsubscribe) {
+            currentUserProfileListenerUnsubscribe(); // Unsubscribe previous listener if exists
+        }
+
+        if (currentLoggedInUserId) {
+            currentUserProfileListenerUnsubscribe = db.collection('users').doc(currentLoggedInUserId)
+                .onSnapshot(async (doc) => {
+                    if (doc.exists) {
+                        const currentUserData = doc.data();
+                        const followingList = currentUserData.following || [];
+
+                        // Update all follow buttons based on the latest following list
+                        document.querySelectorAll('.reel-follow-btn').forEach(button => {
+                            const targetUserId = button.dataset.userId;
+                            if (followingList.includes(targetUserId)) {
+                                button.textContent = "Following";
+                                button.classList.add('following');
+                            } else {
+                                button.textContent = "Follow";
+                                button.classList.remove('following');
+                            }
+                        });
+                    }
+                }, (error) => {
+                    console.error("Error listening to current user profile in reels:", error);
+                });
+        }
+    }
+
+
+    // --- Initialization ---
+
+    // Authenticate user and start loading reels
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        alert("You are not logged in. Redirecting to login page.");
+        window.location.href = "index.html"; // Redirect to login page
+      } else {
+        currentLoggedInUserId = user.uid;
+        // Set initial mute button state
+        muteToggleButton.classList.toggle('fa-volume-mute', isMuted);
+        muteToggleButton.classList.toggle('fa-volume-up', !isMuted);
+
+        // Fetch content language preference from local storage on load
+        contentLanguage = localStorage.getItem('contentLanguage') || 'all'; 
+
+        await fetchAndRenderRandomReels(); 
+        // Setup the listener for the current user's following list
+        setupCurrentUserProfileListener(); 
+      }
+    });
+
+    // Event listener for the new refresh button
+    refreshReelsButton.addEventListener('click', async () => {
+        // Add spinning class when clicked
+        refreshReelsButton.classList.add('spinning'); 
+
+        console.log("Refresh button clicked. Fetching new random reels...");
+        if (currentVideoPlaying) {
+            currentVideoPlaying.pause(); // Pause current video before re-rendering
+            currentVideoPlaying.currentTime = 0;
+            currentVideoPlaying = null;
+        }
+        await fetchAndRenderRandomReels();
+        // Scroll to the top of the container after refresh to ensure the new first reel is visible
+        reelsContainer.scrollTop = 0; 
+        
+        // Remove spinning class after reels are loaded (or after a short delay)
+        // A small timeout can make the animation more noticeable if loading is very fast
+        setTimeout(() => {
+            refreshReelsButton.classList.remove('spinning');
+        }, 500); // Remove after 0.5 seconds, adjust as needed
+    });
+
+
+    // Clean up all active listeners when the page is unloaded to prevent memory leaks
+    window.addEventListener('beforeunload', () => {
+        // Unsubscribe all individual reel listeners
+        Object.values(reelListeners).forEach(unsubscribe => unsubscribe());
+        // Unsubscribe the current user profile listener
+        if (currentUserProfileListenerUnsubscribe) {
+            currentUserProfileListenerUnsubscribe();
+        }
+        // Disconnect the Intersection Observer
+        if (intersectionObserver) {
+            intersectionObserver.disconnect();
+        }
+    });
+
+    // Attach scroll event listener to the reels container
+    // We don't need a separate 'scroll' listener if IntersectionObserver is set up correctly.
+    // The IO handles visibility changes more efficiently than 'scroll' event.
+    // reelsContainer.addEventListener('scroll', playVisibleVideo); // Remove this line
+    
+    // Initial setup of the Intersection Observer is now within initiateVideoPreloading
+    // which is called after renderReels
+    // initializeIntersectionObserver(); // Remove this line as well.
+  </script>
+
+</body>
+</html>
