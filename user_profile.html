@@ -162,10 +162,9 @@
         word-wrap: break-word;
         padding: 0 15px; /* Add some padding to prevent text from touching edges */
     }
-    .bio {
-        margin-top: 10px;
-        margin-bottom: 15px;
-        color: #444;
+    .profession.empty, .bio.empty {
+        font-style: italic;
+        color: #999;
     }
 
     .follow-unfollow-btn {
@@ -323,6 +322,17 @@
       object-fit: cover;
       max-height: 300px;
     }
+    
+    /* New style for video player on profile page */
+    .koo-video {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: block;
+      height: auto;
+      max-height: 300px; /* Consistent with image height */
+      background-color: #000; /* Black background for video player */
+    }
 
     .koo-actions {
       display: flex;
@@ -358,66 +368,6 @@
     }
     .koo-action-btn.rekooed {
       color: #008000;
-    }
-
-    /* Post Options / Follow Button - removed for user profile, but kept styling if needed */
-    .post-options-container {
-        position: absolute;
-        right: 0; /* Align to the right edge of koo-header */
-        top: 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .options-btn {
-        background: none;
-        border: none;
-        font-size: 18px;
-        color: #777;
-        cursor: pointer;
-        padding: 5px;
-        border-radius: 50%;
-        transition: background-color 0.2s ease;
-    }
-
-    .options-btn:hover {
-        background-color: #f0f0f0;
-    }
-
-    .options-menu {
-        position: absolute;
-        top: 30px; /* Adjust based on icon size */
-        right: 0;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        z-index: 20;
-        display: none; /* Hidden by default */
-        min-width: 120px;
-        overflow: hidden;
-    }
-
-    .options-menu.active {
-        display: block;
-    }
-
-    .options-menu button {
-        display: block;
-        width: 100%;
-        padding: 10px 15px;
-        background: none;
-        border: none;
-        text-align: left;
-        cursor: pointer;
-        font-size: 14px;
-        color: #333;
-        transition: background-color 0.2s ease;
-    }
-
-    .options-menu button:hover {
-        background-color: #f0f0f0;
     }
 
     /* No Koos message */
@@ -504,8 +454,8 @@
             </svg>
         </div>
     </h1>
-    <p class="profession" id="profileProfession" style="display: none;"></p>
-    <p class="bio" id="profileBio" style="display: none;"></p>
+    <p class="profession" id="profileProfession"></p>
+    <p class="bio" id="profileBio"></p>
 
     <button class="follow-unfollow-btn" id="followUnfollowBtn" style="display: none;">Loading...</button>
 
@@ -526,7 +476,7 @@
   </div>
 
   <div class="user-koos-section">
-    <h2>User's Koos</h2>
+    <h2 id="usersKoosTitle">User's Koos</h2>
     <div class="user-koos-feed" id="userKoosFeed">
       <div class="no-koos-message" id="loadingUserKoos">Loading user's Koos...</div>
       <div class="no-koos-message" id="noUserKoos" style="display: none;">This user hasn't posted any Koos yet!</div>
@@ -550,7 +500,7 @@
       apiKey: "AIzaSyA_VyZXGHrlJLWBFH8Q5b887y7PFHZpVks",
       authDomain: "petpal-15621.firebaseapp.com",
       projectId: "petpal-15621",
-      storageBucket: "petpal-15621.firebase.appspot.com",
+      storageBucket: "petpal-15621.firebaseapp.com", // Corrected bucket name
       messagingSenderId: "251985816504",
       appId: "1:251985816504:web:ae5b859a963026c8b5bd4d",
       measurementId: "G-Z2ED9VCCZY"
@@ -564,7 +514,7 @@
     const profilePic = document.getElementById('profilePic');
     const profileInitial = document.getElementById('profileInitial');
     const profileUsername = document.getElementById('profileUsername');
-    const userProfileVerifiedTick = document.getElementById('userProfileVerifiedTick'); // New: Main profile tick
+    const userProfileVerifiedTick = document.getElementById('userProfileVerifiedTick'); // Main profile tick
     const profileProfession = document.getElementById('profileProfession');
     const profileBio = document.getElementById('profileBio');
     const kooCountSpan = document.getElementById('kooCount');
@@ -575,9 +525,11 @@
     const noUserKoos = document.getElementById('noUserKoos');
     const followUnfollowBtn = document.getElementById('followUnfollowBtn');
     const headerOptionsMenu = document.getElementById('headerOptionsMenu');
+    const usersKoosTitle = document.getElementById('usersKoosTitle');
 
     let currentLoggedInUserId = null;
     let targetUserId = null; // The ID of the user whose profile is being viewed
+    let videoObserver; // Declare video observer here
 
     // --- Utility Functions ---
 
@@ -644,26 +596,55 @@
         window.location.href = pageUrl;
     }
 
+    // --- Intersection Observer for Video Autoplay ---
+    function initializeVideoObserver() {
+        if (videoObserver) {
+            videoObserver.disconnect();
+        }
+
+        videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    video.play().catch(error => {
+                        console.warn("Autoplay blocked:", error);
+                    });
+                } else {
+                    video.pause();
+                }
+            });
+        }, {
+            threshold: 0.5 // Trigger when 50% of the video is visible
+        });
+    }
+
     // --- Load User Profile Data ---
     async function loadUserProfile(userId) {
       if (!userId) {
+        userProfileTitle.textContent = "Profile Not Found";
         profileUsername.querySelector('span').textContent = "Profile Not Found";
-        userProfileVerifiedTick.style.display = 'none'; // Hide tick
+        userProfileVerifiedTick.style.display = 'none';
         profileProfession.style.display = 'none';
         profileBio.style.display = 'none';
         kooCountSpan.textContent = "0";
         followersCountSpan.textContent = "0";
         followingCountSpan.textContent = "0";
+        profilePic.style.display = 'none';
+        profileInitial.textContent = '?';
+        profileInitial.style.display = 'flex';
+        followUnfollowBtn.style.display = 'none';
+        usersKoosTitle.textContent = "User's Koos"; // Default title
         return;
       }
 
       try {
         const userProfile = await getUserProfile(userId);
         if (userProfile) {
-          userProfileTitle.textContent = `${userProfile.displayName || userProfile.email.split('@')[0]}'s Profile`;
-          profileUsername.querySelector('span').textContent = `@${userProfile.displayName || userProfile.email.split('@')[0]}`;
+          const displayName = userProfile.displayName || userProfile.email.split('@')[0];
+          userProfileTitle.textContent = `${displayName}'s Profile`;
+          profileUsername.querySelector('span').textContent = `@${displayName}`;
+          usersKoosTitle.textContent = `${displayName}'s Koos`;
           
-          // Show/hide verified tick based on userProfile.isVerified
           if (userProfile.isVerified) {
               userProfileVerifiedTick.style.display = 'inline-block';
           } else {
@@ -673,34 +654,36 @@
           followersCountSpan.textContent = userProfile.followers ? userProfile.followers.length : 0;
           followingCountSpan.textContent = userProfile.following ? userProfile.following.length : 0;
 
-          // Display profession
           if (userProfile.profession) {
               profileProfession.textContent = userProfile.profession;
+              profileProfession.classList.remove('empty');
               profileProfession.style.display = 'block';
           } else {
-              profileProfession.style.display = 'none';
+              profileProfession.textContent = 'No profession set';
+              profileProfession.classList.add('empty');
+              profileProfession.style.display = 'block';
           }
 
-          // Display bio
           if (userProfile.bio) {
               profileBio.textContent = userProfile.bio;
+              profileBio.classList.remove('empty');
               profileBio.style.display = 'block';
           } else {
-              profileBio.style.display = 'none';
+              profileBio.textContent = 'No bio set';
+              profileBio.classList.add('empty');
+              profileBio.style.display = 'block';
           }
 
-          // Display profile picture or initial
           if (userProfile.profilePicUrl) {
             profilePic.src = userProfile.profilePicUrl;
             profilePic.style.display = 'block';
             profileInitial.style.display = 'none';
           } else {
             profilePic.style.display = 'none';
-            profileInitial.textContent = (userProfile.displayName || userProfile.email.charAt(0)).charAt(0).toUpperCase();
-            profileInitial.style.display = 'flex'; // Ensure initial is centered
+            profileInitial.textContent = displayName.charAt(0).toUpperCase();
+            profileInitial.style.display = 'flex';
           }
 
-          // Fetch Koo count
           const userKoosSnapshot = await db.collection('koos').where('userId', '==', userId).get();
           kooCountSpan.textContent = userKoosSnapshot.size;
 
@@ -718,25 +701,25 @@
           profilePic.style.display = 'none';
           profileInitial.textContent = '?';
           profileInitial.style.display = 'flex';
-          followUnfollowBtn.style.display = 'none'; // Hide button if user not found
+          followUnfollowBtn.style.display = 'none';
         }
       } catch (error) {
         console.error("Error loading user profile:", error);
-        profileUsername.querySelector('span').textContent = "Error loading profile";
         userProfileTitle.textContent = "Error";
+        profileUsername.querySelector('span').textContent = "Error loading profile";
       } finally {
-          checkFollowStatus(); // Always check follow status after loading the profile
+          checkFollowStatus();
       }
     }
 
     // --- Follow/Unfollow Logic ---
     async function checkFollowStatus() {
         if (!currentLoggedInUserId || !targetUserId || currentLoggedInUserId === targetUserId) {
-            followUnfollowBtn.style.display = 'none'; // Hide button if viewing own profile or not logged in/no target
+            followUnfollowBtn.style.display = 'none';
             return;
         }
 
-        followUnfollowBtn.style.display = 'block'; // Show button
+        followUnfollowBtn.style.display = 'block';
 
         try {
             const currentUserDoc = await db.collection('users').doc(currentLoggedInUserId).get();
@@ -753,7 +736,7 @@
         } catch (error) {
             console.error("Error checking follow status:", error);
             followUnfollowBtn.textContent = 'Error';
-            followUnfollowBtn.disabled = true; // Disable button on error
+            followUnfollowBtn.disabled = true;
         }
     }
 
@@ -768,7 +751,7 @@
             return;
         }
 
-        followUnfollowBtn.disabled = true; // Disable button during operation
+        followUnfollowBtn.disabled = true;
         const isFollowing = followUnfollowBtn.classList.contains('following');
 
         try {
@@ -780,7 +763,7 @@
                 const targetUserDoc = await transaction.get(targetUserRef);
 
                 if (!currentUserDoc.exists || !targetUserDoc.exists) {
-                    throw "User documents not found!";
+                    throw new Error("User documents not found!");
                 }
 
                 let currentUserFollowing = currentUserDoc.data().following || [];
@@ -804,35 +787,35 @@
                 transaction.update(targetUserRef, { followers: targetUserFollowers });
             });
 
-            // Update UI after successful transaction
-            await loadUserProfile(targetUserId); // Reload target user's profile to update follower count
-            await checkFollowStatus(); // Update button text and class
+            await loadUserProfile(targetUserId);
+            await checkFollowStatus();
             alert(isFollowing ? "Unfollowed!" : "Followed!");
 
         } catch (error) {
             console.error("Error toggling follow status:", error);
             alert("Failed to update follow status. Please try again.");
         } finally {
-            followUnfollowBtn.disabled = false; // Re-enable button
+            followUnfollowBtn.disabled = false;
         }
     });
 
 
     // --- Render User's Koos ---
     async function renderUserKoos(usersKoos) {
-      userKoosFeed.innerHTML = ''; // Clear previous posts
+      userKoosFeed.innerHTML = '';
       loadingUserKoos.style.display = 'none';
       noUserKoos.style.display = 'none';
 
       if (usersKoos.length === 0) {
         noUserKoos.style.display = 'block';
+        if (videoObserver) videoObserver.disconnect();
         return;
       }
 
-      // Sort Koos by timestamp (latest first)
+      initializeVideoObserver(); 
+
       usersKoos.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
 
-      // Define the SVG tick HTML once
       const svgTickHtml = `
           <div class="verified-tick-svg">
               <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 256 256" xml:space="preserve">
@@ -845,11 +828,11 @@
       `;
 
       for (const koo of usersKoos) {
-        const userProfile = await getUserProfile(koo.userId); // This is the target user's profile
+        const userProfile = await getUserProfile(koo.userId);
         const profilePicUrl = userProfile && userProfile.profilePicUrl ? userProfile.profilePicUrl : null;
         const displayUsername = userProfile && userProfile.displayName ? userProfile.displayName : (koo.username || 'Anonymous');
         const firstLetter = displayUsername.charAt(0).toUpperCase();
-        const isUserVerified = userProfile && userProfile.isVerified; // Get verification status
+        const isUserVerified = userProfile && userProfile.isVerified;
 
         const hasLiked = koo.likes && koo.likes.includes(currentLoggedInUserId);
         const rekooCount = koo.rekoos ? koo.rekoos.length : 0;
@@ -858,6 +841,16 @@
         const kooCard = document.createElement('div');
         kooCard.className = 'koo-card';
         kooCard.id = `koo-${koo.id}`;
+
+        let mediaHtml = '';
+        if (koo.mediaUrl && koo.mediaType === 'image') {
+            mediaHtml = `<img src="${koo.mediaUrl}" alt="Koo Image" class="koo-image">`;
+        } else if (koo.mediaUrl && koo.mediaType === 'video') {
+            mediaHtml = `<video src="${koo.mediaUrl}" controls muted class="koo-video autoplay-video"></video>`;
+        } else if (koo.imageUrl) { // Backward compatibility for older posts with only imageUrl
+            mediaHtml = `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">`;
+        }
+
 
         kooCard.innerHTML = `
           <div class="koo-header">
@@ -868,7 +861,7 @@
             <span class="koo-timestamp">${formatTimestamp(koo.timestamp)}</span>
             </div>
           <p class="koo-text">${koo.text}</p>
-          ${koo.imageUrl ? `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">` : ''}
+          ${mediaHtml}
           <div class="koo-actions">
             <button class="koo-action-btn ${hasLiked ? 'liked' : ''}" onclick="toggleLike('${koo.id}')">
               <i class="${hasLiked ? 'fas' : 'far'} fa-heart"></i> <span id="like-count-${koo.id}">${likeCount}</span>
@@ -882,6 +875,11 @@
           </div>
         `;
         userKoosFeed.appendChild(kooCard);
+
+        const videoElement = kooCard.querySelector('.autoplay-video');
+        if (videoElement && videoObserver) {
+            videoObserver.observe(videoElement);
+        }
       }
     }
     
@@ -994,14 +992,15 @@
         }
 
         if (targetUserId === currentLoggedInUserId) {
-            // If the user is trying to view their own profile via user_profile.html,
-            // redirect them to their dedicated profile page.
             window.location.href = "profile.html";
             return;
         }
+        
+        // Initialize the video observer
+        initializeVideoObserver();
 
         loadUserProfile(targetUserId);
-        checkFollowStatus(); // Initial check for follow status
+        checkFollowStatus();
       }
     });
 
