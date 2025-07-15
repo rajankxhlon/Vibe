@@ -337,6 +337,18 @@
       max-height: 300px;
     }
 
+    /* New style for video player on profile page */
+    .koo-video {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: block;
+      height: auto;
+      max-height: 300px; /* Consistent with image height */
+      background-color: #000; /* Black background for video player */
+    }
+
+
     .koo-actions {
       display: flex;
       justify-content: space-around;
@@ -922,6 +934,34 @@
     });
 
 
+    // --- Intersection Observer for Video Autoplay on Profile Page ---
+    let videoObserver;
+
+    function initializeVideoObserver() {
+        // Disconnect existing observer if any, to prevent duplicate observations
+        if (videoObserver) {
+            videoObserver.disconnect();
+        }
+
+        videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    // Video is in view, try to play it
+                    video.play().catch(error => {
+                        console.warn("Autoplay blocked on profile page:", error);
+                    });
+                } else {
+                    // Video is out of view, pause it
+                    video.pause();
+                }
+            });
+        }, {
+            threshold: 0.5 // Trigger when 50% of the video is visible
+        });
+    }
+
+
     // --- Load User Profile Data ---
     async function loadUserProfile(userId) {
       if (!userId) {
@@ -980,9 +1020,11 @@
             profileInitial.style.display = 'flex';
           }
 
+          // Fetch and render user's Koos
           const myKoosSnapshot = await db.collection('koos').where('userId', '==', userId).get();
           kooCountSpan.textContent = myKoosSnapshot.size;
 
+          // Pass the 'koos' data, not the snapshot
           renderMyKoos(myKoosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
         } else {
@@ -1012,8 +1054,13 @@
 
       if (myKoos.length === 0) {
         noMyKoos.style.display = 'block';
+        // Disconnect video observer if no videos are present
+        if (videoObserver) videoObserver.disconnect();
         return;
       }
+
+      // Re-initialize observer to attach to new elements
+      initializeVideoObserver(); 
 
       myKoos.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
 
@@ -1043,6 +1090,17 @@
         kooCard.className = 'koo-card';
         kooCard.id = `koo-${koo.id}`;
 
+        let mediaHtml = '';
+        if (koo.mediaUrl && koo.mediaType === 'image') {
+            mediaHtml = `<img src="${koo.mediaUrl}" alt="Koo Image" class="koo-image">`;
+        } else if (koo.mediaUrl && koo.mediaType === 'video') {
+            // Use koo.mediaUrl for videos. Add 'muted' for autoplay and 'autoplay-video' class for observer
+            mediaHtml = `<video src="${koo.mediaUrl}" controls muted class="koo-video autoplay-video"></video>`;
+        } else if (koo.imageUrl) { // Backward compatibility for older posts with only imageUrl
+            mediaHtml = `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">`;
+        }
+
+
         kooCard.innerHTML = `
           <div class="koo-header">
             ${profilePicUrl ? `<img src="${profilePicUrl}" alt="Profile" class="profile-pic">` : `<div class="profile-initial">${firstLetter}</div>`}
@@ -1060,8 +1118,7 @@
             </div>
           </div>
           <p class="koo-text">${koo.text}</p>
-          ${koo.imageUrl ? `<img src="${koo.imageUrl}" alt="Koo Image" class="koo-image">` : ''}
-          <div class="koo-actions">
+          ${mediaHtml} <div class="koo-actions">
             <button class="koo-action-btn ${hasLiked ? 'liked' : ''}" onclick="toggleLike('${koo.id}')">
               <i class="${hasLiked ? 'fas' : 'far'} fa-heart"></i> <span id="like-count-${koo.id}">${likeCount}</span>
             </button>
@@ -1074,6 +1131,12 @@
           </div>
         `;
         myKoosFeed.appendChild(kooCard);
+
+        // Observe the video element if it exists in the newly created card
+        const videoElement = kooCard.querySelector('.autoplay-video');
+        if (videoElement && videoObserver) {
+            videoObserver.observe(videoElement);
+        }
       }
     }
     
@@ -1104,15 +1167,30 @@
     async function deletePost(kooId) {
         if (confirm("Are you sure you want to delete this Koo?")) {
             try {
+                // First, find the koo card and its video element
+                const kooCardToRemove = document.getElementById(`koo-${kooId}`);
+                if (kooCardToRemove) {
+                    const videoElement = kooCardToRemove.querySelector('.autoplay-video');
+                    if (videoElement && videoObserver) {
+                        // Disconnect the video from the observer before removing the element
+                        videoObserver.unobserve(videoElement);
+                    }
+                }
+                
                 await db.collection("koos").doc(kooId).delete();
                 alert("Koo deleted successfully!");
-                document.getElementById(`koo-${kooId}`).remove();
+                
+                if (kooCardToRemove) {
+                    kooCardToRemove.remove(); // Remove the element from DOM
+                }
+
                 const myKoosSnapshot = await db.collection('koos').where('userId', '==', currentLoggedInUserId).get();
                 kooCountSpan.textContent = myKoosSnapshot.size;
                 if (myKoosSnapshot.size === 0) {
                     noMyKoos.style.display = 'block';
                 }
-            } catch (error) {
+            }
+             catch (error) {
                 console.error("Error deleting Koo:", error);
                 alert("Failed to delete Koo. Please try again.");
             }
@@ -1218,6 +1296,7 @@
         window.location.href = "index.html";
       } else {
         currentLoggedInUserId = user.uid;
+        initializeVideoObserver(); // Initialize video observer when user is logged in
         loadUserProfile(currentLoggedInUserId);
       }
     });
@@ -1230,4 +1309,4 @@
   </script>
 
 </body>
-  </html>
+</html>
