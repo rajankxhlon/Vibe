@@ -11,6 +11,7 @@
             font-family: 'Segoe UI', sans-serif;
             background-color: #fffbe6;
             padding-bottom: 70px; /* Space for footer */
+            overflow-x: hidden; /* Prevent horizontal scroll when drawer is open */
         }
 
         .header {
@@ -37,6 +38,72 @@
             font-size: 20px;
             font-weight: bold;
             flex-grow: 1;
+        }
+
+        .header .menu-btn {
+            font-size: 24px;
+            color: #000;
+            cursor: pointer;
+            margin-left: 15px;
+        }
+
+        /* Drawer Menu Styling */
+        .drawer-menu {
+            height: 100%;
+            width: 0; /* Hidden by default */
+            position: fixed;
+            z-index: 20; /* Above header */
+            top: 0;
+            right: 0;
+            background-color: #fff;
+            overflow-x: hidden;
+            transition: 0.3s; /* Smooth transition for opening/closing */
+            padding-top: 60px; /* Space for header if content scrolls */
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .drawer-menu.open {
+            width: 250px; /* Width when open */
+        }
+
+        .drawer-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .drawer-menu ul li {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+            transition: background-color 0.2s ease;
+        }
+
+        .drawer-menu ul li:hover {
+            background-color: #f0f0f0;
+        }
+
+        .drawer-menu .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 30px;
+            color: #000;
+            cursor: pointer;
+        }
+
+        /* Overlay for when drawer is open */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 15; /* Below drawer, above main content */
+            display: none; /* Hidden by default */
         }
 
         /* Notification List Styling */
@@ -178,7 +245,17 @@
     <div class="header">
         <i class="fas fa-arrow-left back-btn" onclick="window.history.back()" title="Go Back"></i>
         <span class="page-title">Notifications</span>
+        <i class="fas fa-bars menu-btn" onclick="toggleDrawer()" title="Menu"></i>
     </div>
+
+    <div id="drawerMenu" class="drawer-menu">
+        <a href="javascript:void(0)" class="close-btn" onclick="toggleDrawer()">&times;</a>
+        <ul>
+            <li onclick="clearAllNotifications()">Clear Notifications</li>
+            </ul>
+    </div>
+
+    <div id="overlay" class="overlay" onclick="toggleDrawer()"></div>
 
     <div class="notification-list-container" id="notificationList">
         <div class="no-notifications-message" id="loadingNotificationsMessage">Loading notifications...</div>
@@ -214,6 +291,8 @@
         const notificationList = document.getElementById('notificationList');
         const loadingNotificationsMessage = document.getElementById('loadingNotificationsMessage');
         const noNotificationsMessage = document.getElementById('noNotificationsMessage');
+        const drawerMenu = document.getElementById('drawerMenu');
+        const overlay = document.getElementById('overlay');
 
         let currentLoggedInUserId = null;
 
@@ -459,6 +538,50 @@
                 // Optionally, inform home.html to update its badge, though the listener should handle it.
             } catch (error) {
                 console.error("Error marking notifications as read:", error);
+            }
+        }
+
+        // --- Drawer Menu Functions ---
+        function toggleDrawer() {
+            drawerMenu.classList.toggle('open');
+            overlay.style.display = drawerMenu.classList.contains('open') ? 'block' : 'none';
+            document.body.style.overflow = drawerMenu.classList.contains('open') ? 'hidden' : 'auto'; // Prevent scrolling body when drawer is open
+        }
+
+        async function clearAllNotifications() {
+            toggleDrawer(); // Close the drawer first
+            if (!currentLoggedInUserId) {
+                alert("Please log in to clear notifications.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            if (!confirm("Are you sure you want to clear all notifications? This action cannot be undone.")) {
+                return;
+            }
+
+            try {
+                loadingNotificationsMessage.textContent = "Clearing notifications...";
+                loadingNotificationsMessage.style.display = 'block';
+                noNotificationsMessage.style.display = 'none';
+                
+                const notificationsRef = db.collection('notifications');
+                const querySnapshot = await notificationsRef.where('recipientId', '==', currentLoggedInUserId).get();
+
+                const batch = db.batch();
+                querySnapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+
+                alert("All notifications cleared successfully!");
+                fetchNotifications(); // Re-fetch to show "No new notifications"
+            } catch (error) {
+                console.error("Error clearing notifications:", error);
+                alert("Failed to clear notifications. Please try again.");
+                loadingNotificationsMessage.style.display = 'none';
+                noNotificationsMessage.textContent = "Failed to clear notifications.";
+                noNotificationsMessage.style.display = 'block';
             }
         }
 
